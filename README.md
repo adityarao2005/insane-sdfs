@@ -17,3 +17,5 @@ SFTP support is too early to decide at this stage (not yet decided whether to in
 Gateway will be made in Golang.
 File sharing common libs will be made in Rust as will entirety of file server.
 File client for web will probably be made in TypeScript and desktop and mobile clients will be either TypeScript via React Native, Kotlin via Kotlin Multiplatform, Flutter, Swift, or .NET MAUI which invoke the file sharing common libs via FFI or WASM.
+
+Escallidrw link: https://excalidraw.com/#json=0cGkqnDu3TxgVyzyLPRF9,gt7MexDG9ngX4dj3kQtaHg
