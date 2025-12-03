@@ -1,64 +1,66 @@
-pub mod client {
-    use trpl::StreamExt;
 
-    use crate::sdfs::types::types::{
-        DeleteFileResult, DownloadFileResult, GetFileResult, ListFilesResult, MoveFileResult,
-        SdfsConnectionConfig, SdfsResult,
-    };
+use std::io;
 
-    pub trait SdfsService {
-        // File querying methods
-        fn list_files<'a>(&'a self, directory: &str) -> impl Future<Output = ListFilesResult> + 'a;
+use trpl::StreamExt;
+use async_trait::async_trait;
 
-        fn get_file<'a>(&'a self, path: &str) -> impl Future<Output = GetFileResult> + 'a;
+use crate::sdfs::types::types::{
+    DeleteFileResult, DownloadFileResult, GetFileResult, ListFilesResult, MoveFileResult,
+    SdfsConnectionConfig, SdfsResult,
+};
 
-        fn file_exists<'a>(&'a self, path: &str) -> impl Future<Output = bool> + 'a;
+#[async_trait]
+pub trait SdfsService {
+    // File querying methods
+    async fn list_files(&self, directory: &str) -> ListFilesResult;
 
-        fn download_file<'a>(&'a self, path: &str)
-        -> impl Future<Output = DownloadFileResult> + 'a;
+    async fn get_file(&self, path: &str) -> GetFileResult;
 
-        // File manipulation methods
-        fn delete_file<'a>(&'a self, path: &str) -> impl Future<Output = DeleteFileResult> + 'a;
+    async fn file_exists(&self, path: &str) -> io::Result<bool>;
 
-        fn upload_file<'a>(
-            &'a self,
-            path: &str,
-            data: impl StreamExt<Item = Vec<u8>> + 'a,
-        ) -> impl Future<Output = bool> + 'a;
+    async fn download_file(&self, path: &str) -> DownloadFileResult;
 
-        fn move_file<'a>(
-            &'a self,
-            src_path: &str,
-            dest_path: &str,
-            overwrite_existing: bool,
-        ) -> impl Future<Output = MoveFileResult> + 'a;
+    // File manipulation methods
+    async fn delete_file(&self, path: &str) -> DeleteFileResult;
 
-        fn rename_file<'a>(
-            &'a self,
-            src_path: &str,
-            new_name: &str,
-        ) -> impl Future<Output = MoveFileResult> + 'a;
+    async fn upload_file(
+        &self,
+        path: &str,
+        data: impl StreamExt<Item = Vec<u8>> + Send,
+    ) -> io::Result<bool>;
 
-        fn copy_file<'a>(
-            &'a self,
-            src_path: &str,
-            dest_path: &str,
-            overwrite_existing: bool,
-        ) -> impl Future<Output = MoveFileResult> + 'a;
+    async fn move_file(
+        &self,
+        src_path: &str,
+        dest_path: &str,
+        overwrite_existing: bool,
+    ) -> MoveFileResult;
 
-        fn create_directory<'a>(
-            &'a self,
-            path: &str,
-            recursive: bool,
-        ) -> impl Future<Output = bool> + 'a;
+    async fn rename_file(
+        &self,
+        src_path: &str,
+        new_name: &str,
+    ) -> MoveFileResult;
 
-        fn ping<'a>(&'a self) -> impl Future<Output = bool> + 'a;
-    }
+    async fn copy_file(
+        &self,
+        src_path: &str,
+        dest_path: &str,
+        overwrite_existing: bool,
+    ) -> MoveFileResult;
 
-    pub trait SdfsServiceFactory<T: SdfsService> {
-        fn connect<'a>(
-            &'a self,
-            config: &SdfsConnectionConfig,
-        ) -> impl Future<Output = SdfsResult<T>> + 'a;
-    }
+    async fn create_directory(
+        &self,
+        path: &str,
+        recursive: bool,
+    ) -> io::Result<bool>;
+
+    async fn ping(&self) -> bool;
+}
+
+pub trait SdfsServiceFactory<T: SdfsService> {
+    fn connect<'a>(
+        &'a self,
+        config: &SdfsConnectionConfig,
+    ) -> impl Future<Output = SdfsResult<T>> + 'a;
 }

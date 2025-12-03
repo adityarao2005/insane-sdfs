@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 insane-sdfs-core = { path = "../insane-sdfs-core" }
+chrono = "0.4.42"
+trpl = "0.3.0"
+tokio = { version = "1.48.0", features = ["full"] }
+async-trait = "0.1.89"

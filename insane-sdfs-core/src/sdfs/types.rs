@@ -2,7 +2,7 @@ pub mod types {
     use chrono::{DateTime, Utc};
     use trpl::{Stream};
 
-    use crate::sdfs::client::client::SdfsService;
+    use crate::sdfs::client::SdfsService;
 
     // Type aliases for clarity
     pub type Token = String;
