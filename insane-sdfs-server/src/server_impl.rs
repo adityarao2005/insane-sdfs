@@ -1,7 +1,7 @@
 use std::io;
 
 use insane_sdfs_core::sdfs::client::SdfsService;
-use insane_sdfs_core::sdfs::types::types::{GetFileResult, ListFilesResult, SdfsFile};
+use insane_sdfs_core::sdfs::types::{GetFileResult, ListFilesResult, SdfsFile};
 
 pub struct TcpSdfsClient {}
 
@@ -50,7 +50,7 @@ impl SdfsService for TcpSdfsClient {
         }
     }
 
-    async fn get_file(&self, path: &str) -> insane_sdfs_core::sdfs::types::types::GetFileResult {
+    async fn get_file(&self, path: &str) -> insane_sdfs_core::sdfs::types::GetFileResult {
         let exists = self.file_exists(path).await.unwrap();
 
         if exists {
@@ -84,15 +84,38 @@ impl SdfsService for TcpSdfsClient {
     async fn download_file(
         &self,
         _path: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::DownloadFileResult {
+    ) -> insane_sdfs_core::sdfs::types::DownloadFileResult {
         unimplemented!()
     }
 
-    async fn delete_file(
-        &self,
-        _path: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::DeleteFileResult {
-        unimplemented!()
+    async fn delete_file(&self, path: &str) -> insane_sdfs_core::sdfs::types::DeleteFileResult {
+        let file = self.get_file(path).await;
+
+        match file {
+            GetFileResult::Success(sdfs_file) => match sdfs_file {
+                SdfsFile::RegularFile { .. } => {
+                    let _ = tokio::fs::remove_file(path).await.unwrap();
+                    return insane_sdfs_core::sdfs::types::DeleteFileResult::Success;
+                }
+                SdfsFile::Directory { .. } => {
+                    let result = self.list_files(path).await;
+
+                    if let ListFilesResult::Success(files) = result {
+                        if files.is_empty() {
+                            let _ = tokio::fs::remove_dir(path).await.unwrap();
+                            return insane_sdfs_core::sdfs::types::DeleteFileResult::Success;
+                        } else {
+                            return insane_sdfs_core::sdfs::types::DeleteFileResult::DirectoryNotEmpty;
+                        }
+                    }
+
+                    return insane_sdfs_core::sdfs::types::DeleteFileResult::FileNotFound;
+                }
+            },
+            _ => {
+                return insane_sdfs_core::sdfs::types::DeleteFileResult::FileNotFound;
+            }
+        }
     }
 
     async fn upload_file(
@@ -105,28 +128,114 @@ impl SdfsService for TcpSdfsClient {
 
     async fn move_file(
         &self,
-        _src_path: &str,
-        _dest_path: &str,
-        _overwrite_existing: bool,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
-        unimplemented!()
+        src_path: &str,
+        dest_path: &str,
+        overwrite_existing: bool,
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
+        if !self.file_exists(src_path).await.unwrap_or(false) {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+        }
+
+        let dest_exists = self.file_exists(dest_path).await.unwrap_or(false);
+
+        if dest_exists && !overwrite_existing {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileAlreadyExists;
+        } else if dest_exists {
+            // get rid of the destination file
+            match self.get_file(dest_path).await {
+                GetFileResult::Success(value) => match value {
+                    SdfsFile::RegularFile { .. } => {
+                        if tokio::fs::remove_file(dest_path).await.is_err() {
+                            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                        }
+                    }
+                    SdfsFile::Directory { .. } => {
+                        if tokio::fs::remove_dir_all(dest_path).await.is_err() {
+                            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                        }
+                    }
+                },
+                _ => return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound,
+            }
+        } else {
+            // Check parent directory exists
+            if let Some(parent) = std::path::Path::new(dest_path)
+                .parent()
+                .and_then(|p| p.to_str())
+            {
+                // Empty string means current directory, which always exists
+                if !parent.is_empty() && !self.file_exists(parent).await.unwrap_or(false) {
+                    return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                }
+            }
+        }
+
+        // rename the source to destination
+        if tokio::fs::rename(src_path, dest_path).await.is_err() {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+        }
+
+        insane_sdfs_core::sdfs::types::MoveFileResult::Success
     }
 
     async fn rename_file(
         &self,
-        _src_path: &str,
-        _new_name: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
-        unimplemented!()
+        src_path: &str,
+        new_name: &str,
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
+        return self.move_file(src_path, new_name, false).await;
     }
 
     async fn copy_file(
         &self,
-        _src_path: &str,
-        _dest_path: &str,
-        _overwrite_existing: bool,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
-        unimplemented!()
+        src_path: &str,
+        dest_path: &str,
+        overwrite_existing: bool,
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
+        if !self.file_exists(src_path).await.unwrap_or(false) {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+        }
+
+        let dest_exists = self.file_exists(dest_path).await.unwrap_or(false);
+
+        if dest_exists && !overwrite_existing {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileAlreadyExists;
+        } else if dest_exists {
+            // get rid of the destination file
+            match self.get_file(dest_path).await {
+                GetFileResult::Success(value) => match value {
+                    SdfsFile::RegularFile { .. } => {
+                        if tokio::fs::remove_file(dest_path).await.is_err() {
+                            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                        }
+                    }
+                    SdfsFile::Directory { .. } => {
+                        if tokio::fs::remove_dir_all(dest_path).await.is_err() {
+                            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                        }
+                    }
+                },
+                _ => return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound,
+            }
+        } else {
+            // Check parent directory exists
+            if let Some(parent) = std::path::Path::new(dest_path)
+                .parent()
+                .and_then(|p| p.to_str())
+            {
+                // Empty string means current directory, which always exists
+                if !parent.is_empty() && !self.file_exists(parent).await.unwrap_or(false) {
+                    return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+                }
+            }
+        }
+
+        // copy the source to destination
+        if tokio::fs::copy(src_path, dest_path).await.is_err() {
+            return insane_sdfs_core::sdfs::types::MoveFileResult::FileNotFound;
+        }
+
+        insane_sdfs_core::sdfs::types::MoveFileResult::Success
     }
 
     async fn create_directory(&self, path: &str, recursive: bool) -> io::Result<bool> {
@@ -274,6 +383,114 @@ mod tests {
 
         // Clean up
         assert!(fs::remove_dir_all(path).is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_delete_file() {
+        let client = TcpSdfsClient {};
+        let file_path = "test_delete_file.txt";
+        let dir_path = "test_delete_dir";
+        let non_empty_dir_path = "test_delete_non_empty_dir";
+
+        // Test deleting a regular file
+        fs::write(file_path, "Hello, Insane SDFS!").unwrap();
+        let result = client.delete_file(file_path).await;
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::DeleteFileResult::Success
+        ));
+        assert!(!fs::exists(file_path).unwrap());
+
+        // Test deleting an empty directory
+        fs::create_dir(dir_path).unwrap();
+        let result = client.delete_file(dir_path).await;
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::DeleteFileResult::Success
+        ));
+        assert!(!fs::exists(dir_path).unwrap());
+
+        // Test deleting a non-empty directory
+        fs::create_dir(non_empty_dir_path).unwrap();
+        fs::write(format!("{}/file.txt", non_empty_dir_path), "Content").unwrap();
+        let result = client.delete_file(non_empty_dir_path).await;
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::DeleteFileResult::DirectoryNotEmpty
+        ));
+        assert!(fs::exists(non_empty_dir_path).unwrap());
+
+        // Clean up
+        fs::remove_dir_all(non_empty_dir_path).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_move_file() {
+        let client = TcpSdfsClient {};
+        let src_path = "test_move_src.txt";
+        let dest_path = "test_move_dest.txt";
+
+        // Create source file
+        fs::write(src_path, "Hello, Insane SDFS!").unwrap();
+
+        // Move file to destination
+        let result = client.move_file(src_path, dest_path, false).await;
+
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::MoveFileResult::Success
+        ));
+        assert!(!fs::exists(src_path).unwrap());
+        assert!(fs::exists(dest_path).unwrap());
+
+        // Clean up
+        fs::remove_file(dest_path).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_rename_file() {
+        let client = TcpSdfsClient {};
+        let src_path = "test_rename_src.txt";
+        let new_name = "test_rename_new.txt";
+
+        // Create source file
+        fs::write(src_path, "Hello, Insane SDFS!").unwrap();
+        // Rename file
+        let result = client.rename_file(src_path, new_name).await;
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::MoveFileResult::Success
+        ));
+        assert!(!fs::exists(src_path).unwrap());
+        assert!(fs::exists(new_name).unwrap());
+
+        // Clean up
+        fs::remove_file(new_name).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_copy_file() {
+        let client = TcpSdfsClient {};
+        let src_path = "test_copy_src.txt";
+        let dest_path = "test_copy_dest.txt";
+
+        // Create source file
+        fs::write(src_path, "Hello, Insane SDFS!").unwrap();
+        // Copy file to destination
+        let result = client.copy_file(src_path, dest_path, false).await;
+        assert!(matches!(
+            result,
+            insane_sdfs_core::sdfs::types::MoveFileResult::Success
+        ));
+        assert!(fs::exists(src_path).unwrap());
+        assert!(fs::exists(dest_path).unwrap());
+        let src_content = fs::read_to_string(src_path).unwrap();
+        let dest_content = fs::read_to_string(dest_path).unwrap();
+        assert_eq!(src_content, dest_content);
+
+        // Clean up
+        fs::remove_file(src_path).unwrap();
+        fs::remove_file(dest_path).unwrap();
     }
 
     #[tokio::test]

@@ -4,7 +4,7 @@ use std::io;
 use trpl::StreamExt;
 use async_trait::async_trait;
 
-use crate::sdfs::types::types::{
+use crate::sdfs::types::{
     DeleteFileResult, DownloadFileResult, GetFileResult, ListFilesResult, MoveFileResult,
     SdfsConnectionConfig, SdfsResult,
 };

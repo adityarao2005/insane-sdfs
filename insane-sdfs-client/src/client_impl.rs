@@ -1,7 +1,7 @@
 use std::io;
 
 use insane_sdfs_core::sdfs::client::SdfsService;
-use insane_sdfs_core::sdfs::types::types::ListFilesResult;
+use insane_sdfs_core::sdfs::types::ListFilesResult;
 
 pub struct TcpSdfsClient {}
 
@@ -11,7 +11,7 @@ impl SdfsService for TcpSdfsClient {
         unimplemented!()
     }
 
-    async fn get_file(&self, _path: &str) -> insane_sdfs_core::sdfs::types::types::GetFileResult {
+    async fn get_file(&self, _path: &str) -> insane_sdfs_core::sdfs::types::GetFileResult {
         unimplemented!()
     }
 
@@ -22,14 +22,14 @@ impl SdfsService for TcpSdfsClient {
     async fn download_file(
         &self,
         _path: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::DownloadFileResult {
+    ) -> insane_sdfs_core::sdfs::types::DownloadFileResult {
         unimplemented!()
     }
 
     async fn delete_file(
         &self,
         _path: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::DeleteFileResult {
+    ) -> insane_sdfs_core::sdfs::types::DeleteFileResult {
         unimplemented!()
     }
 
@@ -46,7 +46,7 @@ impl SdfsService for TcpSdfsClient {
         _src_path: &str,
         _dest_path: &str,
         _overwrite_existing: bool,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
         unimplemented!()
     }
 
@@ -54,7 +54,7 @@ impl SdfsService for TcpSdfsClient {
         &self,
         _src_path: &str,
         _new_name: &str,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
         unimplemented!()
     }
 
@@ -63,7 +63,7 @@ impl SdfsService for TcpSdfsClient {
         _src_path: &str,
         _dest_path: &str,
         _overwrite_existing: bool,
-    ) -> insane_sdfs_core::sdfs::types::types::MoveFileResult {
+    ) -> insane_sdfs_core::sdfs::types::MoveFileResult {
         unimplemented!()
     }
 
