@@ -1,3 +1,5 @@
+use std::io;
+
 use insane_sdfs_core::sdfs::client::SdfsService;
 use insane_sdfs_core::sdfs::types::types::ListFilesResult;
 
@@ -13,7 +15,7 @@ impl SdfsService for TcpSdfsClient {
         unimplemented!()
     }
 
-    async fn file_exists(&self, _path: &str) -> bool {
+    async fn file_exists(&self, _path: &str) -> io::Result<bool> {
         unimplemented!()
     }
 
@@ -35,7 +37,7 @@ impl SdfsService for TcpSdfsClient {
         &self,
         _path: &str,
         _data: impl trpl::StreamExt<Item = Vec<u8>> + Send,
-    ) -> bool {
+    ) -> io::Result<bool> {
         unimplemented!()
     }
 
@@ -65,7 +67,7 @@ impl SdfsService for TcpSdfsClient {
         unimplemented!()
     }
 
-    async fn create_directory(&self, _path: &str, _recursive: bool) -> bool {
+    async fn create_directory(&self, _path: &str, _recursive: bool) -> io::Result<bool> {
         unimplemented!()
     }
 
