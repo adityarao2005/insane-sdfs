@@ -149,10 +149,78 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_ping() {
+    async fn test_list_files() {
         let client = TcpSdfsClient {};
-        let result = client.ping().await;
-        assert!(result);
+
+        let directory = "some";
+        let result = client.list_files(directory).await;
+        assert!(matches!(result, ListFilesResult::DirectoryNotFound));
+
+        fs::create_dir(directory).unwrap();
+
+        let result = client.list_files(directory).await;
+        assert!(matches!(result, ListFilesResult::Success(_)));
+
+        // test empty directory
+        if let ListFilesResult::Success(files) = result {
+            assert!(files.is_empty());
+        }
+
+        let contents = "Hello, Insane SDFS!";
+        fs::write(format!("{}/file1.txt", directory), contents).unwrap();
+
+        // test listing with one file
+        let result = client.list_files(directory).await;
+        assert!(matches!(result, ListFilesResult::Success(_)));
+        if let ListFilesResult::Success(files) = result {
+            assert_eq!(files.len(), 1);
+            match &files[0] {
+                SdfsFile::RegularFile { name, size, .. } => {
+                    assert_eq!(name, "some/file1.txt");
+                    assert_eq!(*size, contents.len() as u64);
+                }
+                _ => panic!("Expected RegularFile"),
+            }
+        }
+
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_file() {
+        let client = TcpSdfsClient {};
+
+        let content = "Hello, Insane SDFS!";
+        let file = "test_file.txt";
+        let directory = "test_dir";
+        fs::write(file, content).unwrap();
+        fs::create_dir(directory).unwrap();
+
+        let result = client.get_file(file).await;
+        assert!(matches!(result, GetFileResult::Success(_)));
+        if let GetFileResult::Success(sdfs_file) = result {
+            match sdfs_file {
+                SdfsFile::RegularFile { name, size, .. } => {
+                    assert_eq!(name, file);
+                    assert_eq!(size, content.len() as u64);
+                }
+                _ => panic!("Expected RegularFile"),
+            }
+        }
+
+        let result = client.get_file(directory).await;
+        assert!(matches!(result, GetFileResult::Success(_)));
+        if let GetFileResult::Success(sdfs_file) = result {
+            match sdfs_file {
+                SdfsFile::Directory { name, .. } => {
+                    assert_eq!(name, directory);
+                }
+                _ => panic!("Expected Directory"),
+            }
+        }
+
+        fs::remove_file(file).unwrap();
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[tokio::test]
@@ -164,11 +232,13 @@ mod tests {
         // Ensure the file does not exist
         let result = client.file_exists(path).await;
         assert!(result.is_ok());
+        assert!(!result.unwrap());
 
         // Create the file and test existence again
         assert!(fs::write(path, contents).is_ok());
         let result = client.file_exists(path).await;
         assert!(result.is_ok());
+        assert!(result.unwrap());
 
         // Clean up
         assert!(fs::remove_file(path).is_ok());
@@ -178,9 +248,38 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_list_files() {
+    async fn test_create_directory() {
         let client = TcpSdfsClient {};
-        let _result = client.list_files("/some/directory").await;
-        // Add assertions here based on expected behavior
+        let path = "test_create_directory";
+        let recursive_path = "test_create_directory/nested/dir";
+
+        // Ensure the dirs does not exist
+        let result = fs::exists(path);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+        let result = fs::exists(recursive_path);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+
+        // Create the dirs and test existence again
+        assert!(client.create_directory(path, false).await.is_ok());
+        let result = fs::exists(path);
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+
+        assert!(client.create_directory(recursive_path, true).await.is_ok());
+        let result = fs::exists(recursive_path);
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+
+        // Clean up
+        assert!(fs::remove_dir_all(path).is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_ping() {
+        let client = TcpSdfsClient {};
+        let result = client.ping().await;
+        assert!(result);
     }
 }
