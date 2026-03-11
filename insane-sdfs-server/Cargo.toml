@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 insane-sdfs-core = { path = "../insane-sdfs-core" }
-async-trait = "0.1.89"
-tokio = { version = "1.48.0", features = ["full"] }
-chrono = "0.4.42"
-trpl = "0.3.0"
+tokio = { workspace = true, features = ["full"] }
+libp2p = { workspace = true, features = [ "tokio", "gossipsub", "mdns", "tcp", "macros", "noise", "yamux", "quic" ] }
+futures = { workspace = true }

@@ -1,3 +1,11 @@
 [workspace]
 resolver = "3"
 members = ["insane-sdfs-client", "insane-sdfs-core", "insane-sdfs-server"]
+
+[workspace.package]
+edition = "2024"
+
+[workspace.dependencies]
+tokio = { version = "1.48.0", features = ["full"] }
+libp2p = { version = "0.56.0", features = [ "tokio", "gossipsub", "mdns", "tcp", "macros", "noise", "yamux", "quic" ] }
+futures = "0.3.32"
