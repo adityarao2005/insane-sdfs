@@ -124,3 +124,47 @@ func TestSessionHeartbeatAndTTLExpiry(t *testing.T) {
 		t.Fatalf("expected ErrSessionExpired after ttl, got %v", err)
 	}
 }
+
+func TestStartSessionByPublicKey(t *testing.T) {
+	tokens := security.NewInviteTokenStore()
+	svc := NewService(tokens)
+	now := time.Unix(2000, 0).UTC()
+
+	invite, _, err := svc.IssueInvite(10*time.Minute, now)
+	if err != nil {
+		t.Fatalf("issue invite: %v", err)
+	}
+	_, err = svc.CreateEnrollmentRequest(invite, "phone", "pk-session", "192.168.1.21", now.Add(time.Minute))
+	if err != nil {
+		t.Fatalf("create request: %v", err)
+	}
+
+	if _, err := svc.StartSessionByPublicKey("pk-session", now.Add(2*time.Minute)); err != ErrDevicePublicKeyNotFound {
+		t.Fatalf("expected ErrDevicePublicKeyNotFound before approval, got %v", err)
+	}
+
+	req := svc.ListPendingRequests()
+	if len(req) != 1 {
+		t.Fatalf("expected 1 pending request, got %d", len(req))
+	}
+	dev, err := svc.ApproveEnrollmentRequest(req[0].ID, now.Add(3*time.Minute))
+	if err != nil {
+		t.Fatalf("approve request: %v", err)
+	}
+
+	sess, err := svc.StartSessionByPublicKey("pk-session", now.Add(4*time.Minute))
+	if err != nil {
+		t.Fatalf("start session by public key: %v", err)
+	}
+	if sess.DeviceID != dev.ID {
+		t.Fatalf("unexpected device id in session: got=%s want=%s", sess.DeviceID, dev.ID)
+	}
+
+	_, _, err = svc.RevokeDevice(dev.ID, now.Add(5*time.Minute))
+	if err != nil {
+		t.Fatalf("revoke device: %v", err)
+	}
+	if _, err := svc.StartSessionByPublicKey("pk-session", now.Add(6*time.Minute)); err != ErrDeviceRevoked {
+		t.Fatalf("expected ErrDeviceRevoked after revocation, got %v", err)
+	}
+}

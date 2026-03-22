@@ -11,6 +11,7 @@ import (
 
 var ErrEnrollmentRequestNotFound = errors.New("enrollment request not found")
 var ErrDeviceNotFound = errors.New("device not found")
+var ErrDevicePublicKeyNotFound = errors.New("device public key not found")
 var ErrDeviceAlreadyRevoked = errors.New("device already revoked")
 var ErrDeviceRevoked = errors.New("device is revoked")
 var ErrSessionNotFound = errors.New("session not found")
@@ -183,6 +184,30 @@ func (s *Service) StartSession(deviceID string, now time.Time) (Session, error) 
 		return Session{}, ErrDeviceRevoked
 	}
 
+	return s.startSessionLocked(deviceID, now), nil
+}
+
+func (s *Service) StartSessionByPublicKey(publicKey string, now time.Time) (Session, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.sweepExpiredSessionsLocked(now)
+
+	for _, dev := range s.devices {
+		if dev.PublicKey != publicKey {
+			continue
+		}
+		if dev.Revoked {
+			return Session{}, ErrDeviceRevoked
+		}
+		return s.startSessionLocked(dev.ID, now), nil
+	}
+
+	return Session{}, ErrDevicePublicKeyNotFound
+}
+
+func (s *Service) startSessionLocked(deviceID string, now time.Time) Session {
+
 	s.nextSessionID++
 	sid := fmt.Sprintf("sess-%06d", s.nextSessionID)
 	session := Session{
@@ -194,7 +219,7 @@ func (s *Service) StartSession(deviceID string, now time.Time) (Session, error) 
 		Active:          true,
 	}
 	s.sessions[sid] = session
-	return session, nil
+	return session
 }
 
 func (s *Service) ListActiveSessions() []Session {
@@ -244,6 +269,25 @@ func (s *Service) HeartbeatSession(sessionID string, now time.Time) (Session, er
 	sess.LastHeartbeatAt = now
 	sess.ExpiresAt = now.Add(s.sessionTTL)
 	s.sessions[sessionID] = sess
+	return sess, nil
+}
+
+func (s *Service) GetActiveSession(sessionID string, now time.Time) (Session, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.sweepExpiredSessionsLocked(now)
+
+	sess, ok := s.sessions[sessionID]
+	if !ok {
+		return Session{}, ErrSessionNotFound
+	}
+	if !sess.Active {
+		if !sess.ExpiresAt.IsZero() && !now.Before(sess.ExpiresAt) {
+			return Session{}, ErrSessionExpired
+		}
+		return Session{}, ErrSessionInactive
+	}
 	return sess, nil
 }
 

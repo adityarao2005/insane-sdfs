@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"insane-sdfs/internal/enrollment"
+	"insane-sdfs/internal/filestore"
 	"insane-sdfs/internal/network"
 	"insane-sdfs/internal/security"
 )
@@ -16,12 +17,14 @@ import (
 type ServerDeps struct {
 	AdminToken       string
 	Enrollment       *enrollment.Service
+	FileStore        *filestore.LocalStore
 	DefaultInviteTTL time.Duration
 }
 
 type server struct {
 	adminToken       string
 	enrollment       *enrollment.Service
+	fileStore        *filestore.LocalStore
 	defaultInviteTTL time.Duration
 }
 
@@ -29,11 +32,13 @@ func NewServer(deps ServerDeps) http.Handler {
 	s := &server{
 		adminToken:       deps.AdminToken,
 		enrollment:       deps.Enrollment,
+		fileStore:        deps.FileStore,
 		defaultInviteTTL: deps.DefaultInviteTTL,
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealth)
+	mux.HandleFunc("GET /admin", s.handleAdminDashboard)
 	mux.HandleFunc("POST /v1/admin/invites", s.withAdminAuth(s.handleIssueInvite))
 	mux.HandleFunc("GET /v1/admin/enrollments/pending", s.withAdminAuth(s.handleListPendingEnrollments))
 	mux.HandleFunc("POST /v1/admin/enrollments/approve", s.withAdminAuth(s.handleApproveEnrollment))
@@ -43,6 +48,11 @@ func NewServer(deps ServerDeps) http.Handler {
 	mux.HandleFunc("POST /v1/admin/sessions/heartbeat", s.withAdminAuth(s.handleHeartbeatSession))
 	mux.HandleFunc("POST /v1/admin/devices/revoke", s.withAdminAuth(s.handleRevokeDevice))
 	mux.HandleFunc("POST /v1/enroll/request", s.handleCreateEnrollmentRequest)
+	mux.HandleFunc("PUT /v1/client/files/object", s.handleClientUploadFile)
+	mux.HandleFunc("GET /v1/client/files/object", s.handleClientDownloadFile)
+	mux.HandleFunc("GET /v1/client/files/list", s.handleClientListFiles)
+	mux.HandleFunc("POST /v1/client/sessions/get", s.handleClientSessionGet)
+	mux.HandleFunc("POST /v1/client/sessions/heartbeat", s.handleClientSessionHeartbeat)
 	return mux
 }
 

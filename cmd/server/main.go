@@ -8,6 +8,7 @@ import (
 
 	"insane-sdfs/internal/api"
 	"insane-sdfs/internal/enrollment"
+	"insane-sdfs/internal/filestore"
 	"insane-sdfs/internal/security"
 )
 
@@ -24,10 +25,13 @@ func main() {
 
 	tokenStore := security.NewInviteTokenStore()
 	enrollmentSvc := enrollment.NewService(tokenStore)
+	dataDir := os.Getenv("SDFS_DATA_DIR")
+	fileStore := filestore.NewLocalStore(dataDir)
 
 	handler := api.NewServer(api.ServerDeps{
 		AdminToken:       adminToken,
 		Enrollment:       enrollmentSvc,
+		FileStore:        fileStore,
 		DefaultInviteTTL: 10 * time.Minute,
 	})
 

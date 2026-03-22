@@ -39,6 +39,11 @@ curl -s http://127.0.0.1:8080/healthz
 - `POST /v1/admin/sessions/heartbeat` (header `X-Admin-Token`)
 - `POST /v1/admin/devices/revoke` (header `X-Admin-Token`)
 - `POST /v1/enroll/request` (LAN-only)
+- `PUT /v1/client/files/object?path=<path>` (header `X-Session-Id`)
+- `GET /v1/client/files/object?path=<path>` (header `X-Session-Id`)
+- `GET /v1/client/files/list?prefix=<prefix>` (header `X-Session-Id`)
+- `POST /v1/client/sessions/get` (body `devicePublicKey`)
+- `POST /v1/client/sessions/heartbeat` (header `X-Session-Id`)
 
 Revocation behavior:
 
@@ -49,6 +54,53 @@ Session TTL behavior:
 
 - Sessions have a server-side TTL and automatically expire when heartbeats stop.
 - Heartbeat refresh extends session expiry.
+
+## Admin Dashboard
+
+- Open `http://127.0.0.1:8080/admin` in a browser.
+- Paste your admin token into the dashboard field.
+- Use buttons to issue invites, approve enrollments, start/heartbeat sessions, list resources, and revoke devices.
+
+## Admin CLI
+
+Build admin CLI:
+
+```bash
+go build -o bin/sdfsadm ./cmd/sdfsadm
+```
+
+Examples:
+
+```bash
+bin/sdfsadm invite --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN" --ttl-seconds 600
+bin/sdfsadm pending --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN"
+bin/sdfsadm approve --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN" --request-id req-000001
+bin/sdfsadm devices --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN"
+bin/sdfsadm sessions-start --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN" --device-id dev-000001
+bin/sdfsadm sessions-heartbeat --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN" --session-id sess-000001
+bin/sdfsadm revoke --server http://127.0.0.1:8080 --token "$SDFS_ADMIN_TOKEN" --device-id dev-000001
+```
+
+## Client CLI
+
+This CLI is for end-users (not server admins) to enroll and store/fetch their files.
+
+Build CLI:
+
+```bash
+go build -o bin/sdfsctl ./cmd/sdfsctl
+```
+
+Examples:
+
+```bash
+bin/sdfsctl enroll-request --server http://127.0.0.1:8080 --invite-token INVITE --device-name my-laptop --device-public-key PUBKEY
+bin/sdfsctl session-get --server http://127.0.0.1:8080 --device-public-key PUBKEY
+bin/sdfsctl files-put --server http://127.0.0.1:8080 --session-id sess-000001 --local ./photo.jpg --remote images/photo.jpg
+bin/sdfsctl files-list --server http://127.0.0.1:8080 --session-id sess-000001 --prefix images
+bin/sdfsctl files-get --server http://127.0.0.1:8080 --session-id sess-000001 --remote images/photo.jpg --local ./downloaded/photo.jpg
+bin/sdfsctl session-heartbeat --server http://127.0.0.1:8080 --session-id sess-000001
+```
 
 This is an implementation starting point focused on trust onboarding and enrollment security.
 
