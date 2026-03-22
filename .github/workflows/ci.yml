@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-and-integration:
+    name: Unit and Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run unit and integration tests
+        run: go test ./...
+
+  e2e-hole-punch:
+    name: E2E Hole Punching
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - unit-and-integration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run e2e testcontainers test
+        env:
+          SDFS_RUN_E2E: "1"
+        run: go test -count=1 -tags=e2e ./test/e2e -v

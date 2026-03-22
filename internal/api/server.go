@@ -37,6 +37,11 @@ func NewServer(deps ServerDeps) http.Handler {
 	mux.HandleFunc("POST /v1/admin/invites", s.withAdminAuth(s.handleIssueInvite))
 	mux.HandleFunc("GET /v1/admin/enrollments/pending", s.withAdminAuth(s.handleListPendingEnrollments))
 	mux.HandleFunc("POST /v1/admin/enrollments/approve", s.withAdminAuth(s.handleApproveEnrollment))
+	mux.HandleFunc("GET /v1/admin/devices", s.withAdminAuth(s.handleListDevices))
+	mux.HandleFunc("GET /v1/admin/sessions/active", s.withAdminAuth(s.handleListActiveSessions))
+	mux.HandleFunc("POST /v1/admin/sessions/start", s.withAdminAuth(s.handleStartSession))
+	mux.HandleFunc("POST /v1/admin/sessions/heartbeat", s.withAdminAuth(s.handleHeartbeatSession))
+	mux.HandleFunc("POST /v1/admin/devices/revoke", s.withAdminAuth(s.handleRevokeDevice))
 	mux.HandleFunc("POST /v1/enroll/request", s.handleCreateEnrollmentRequest)
 	return mux
 }
@@ -155,6 +160,104 @@ func (s *server) handleApproveEnrollment(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusCreated, dev)
+}
+
+func (s *server) handleListDevices(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"items": s.enrollment.ListDevices(),
+	})
+}
+
+type revokeDeviceRequest struct {
+	DeviceID string `json:"deviceId"`
+}
+
+type startSessionRequest struct {
+	DeviceID string `json:"deviceId"`
+}
+
+type heartbeatSessionRequest struct {
+	SessionID string `json:"sessionId"`
+}
+
+func (s *server) handleListActiveSessions(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"items": s.enrollment.ListActiveSessions(),
+	})
+}
+
+func (s *server) handleStartSession(w http.ResponseWriter, r *http.Request) {
+	var req startSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.DeviceID) == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "deviceId is required"})
+		return
+	}
+
+	sess, err := s.enrollment.StartSession(req.DeviceID, time.Now().UTC())
+	if err != nil {
+		switch {
+		case errors.Is(err, enrollment.ErrDeviceNotFound):
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "device not found"})
+		case errors.Is(err, enrollment.ErrDeviceRevoked):
+			writeJSON(w, http.StatusConflict, map[string]string{"error": "device is revoked"})
+		default:
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not start session"})
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, sess)
+}
+
+func (s *server) handleHeartbeatSession(w http.ResponseWriter, r *http.Request) {
+	var req heartbeatSessionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.SessionID) == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sessionId is required"})
+		return
+	}
+
+	sess, err := s.enrollment.HeartbeatSession(req.SessionID, time.Now().UTC())
+	if err != nil {
+		switch {
+		case errors.Is(err, enrollment.ErrSessionNotFound):
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "session not found"})
+		case errors.Is(err, enrollment.ErrSessionExpired):
+			writeJSON(w, http.StatusConflict, map[string]string{"error": "session expired"})
+		case errors.Is(err, enrollment.ErrSessionInactive):
+			writeJSON(w, http.StatusConflict, map[string]string{"error": "session inactive"})
+		default:
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not heartbeat session"})
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, sess)
+}
+
+func (s *server) handleRevokeDevice(w http.ResponseWriter, r *http.Request) {
+	var req revokeDeviceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.DeviceID) == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "deviceId is required"})
+		return
+	}
+
+	dev, terminatedCount, err := s.enrollment.RevokeDevice(req.DeviceID, time.Now().UTC())
+	if err != nil {
+		switch {
+		case errors.Is(err, enrollment.ErrDeviceNotFound):
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "device not found"})
+		case errors.Is(err, enrollment.ErrDeviceAlreadyRevoked):
+			writeJSON(w, http.StatusConflict, map[string]string{"error": "device already revoked"})
+		default:
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not revoke device"})
+		}
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"device":             dev,
+		"terminatedSessions": terminatedCount,
+	})
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
