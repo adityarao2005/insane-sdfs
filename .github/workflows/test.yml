@@ -23,8 +23,8 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install protoc
-        uses: ardunio/setup-protoc@v3
+      - name: Setup protoc
+        uses: arduino/setup-protoc@v3.0.0
           
       - name: Install Task
         uses: go-task/setup-task@v1
