@@ -10,9 +10,16 @@ tasks:
     silent: true
 
   run:
-    desc: Run the gRPC server (optional GRPC_PORT=8080)
+    desc: Run the file server
     cmds:
       - GRPC_PORT=8080 && go run .
+    deps:
+      - build
+
+  test:
+    desc: Test the file server
+    cmds:
+      - go test -v
     deps:
       - build
 
@@ -32,8 +39,8 @@ tasks:
       - proto
 
   proto:
-    desc: Regenerate Go protobuf and gRPC stubs from ../proto/HelloService.proto
+    desc: Regenerate Go protobuf and gRPC stubs
     cmds:
       - mkdir -p pb
-      - protoc -I ../proto --go_out=pb --go-grpc_out=pb --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative ../proto/HelloService.proto
+      - protoc -I ../proto --go_out=pb --go-grpc_out=pb --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative ../proto/*.proto
     silent: true

@@ -6,3 +6,13 @@ includes:
   server:
     taskfile: ./server/Taskfile.yml
     dir: ./server
+  client:
+    taskfile: ./client/Taskfile.yml
+    dir: ./client
+
+tasks:
+  test:
+    desc: Run all tests
+    cmds:
+      - task server:test
+      - task client:test
