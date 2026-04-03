@@ -12,7 +12,7 @@ tasks:
   run:
     desc: Run the gRPC server (optional GRPC_PORT=8080)
     cmds:
-      - go run .
+      - GRPC_PORT=8080 && go run .
     deps:
       - build
 

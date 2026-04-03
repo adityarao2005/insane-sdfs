@@ -12,19 +12,19 @@ tasks:
   install:
     desc: Install node dependencies for the TypeScript gRPC client
     cmds:
-      - pnpm install
+      - bun install
 
   proto:
     desc: Generate TypeScript code from ../proto/HelloService.proto
     cmds:
-      - pnpm run proto:create
+      - bun run proto:create
     deps:
       - install
 
   run:
     desc: Run the gRPC client once
     cmds:
-      - pnpm start
+      - GRPC_SERVER_ADDRESS="localhost:8080" NAME="Aditya" bun run src/index.ts
     deps:
       - proto
       - install
