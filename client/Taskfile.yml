@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  default:
+    desc: Show available client tasks
+    cmds:
+      - task --list
+    silent: true
+
+  install:
+    desc: Install node dependencies for the TypeScript gRPC client
+    cmds:
+      - pnpm install
+
+  proto:
+    desc: Generate TypeScript code from ../proto/HelloService.proto
+    cmds:
+      - pnpm run proto:create
+    deps:
+      - install
+
+  run:
+    desc: Run the gRPC client once
+    cmds:
+      - pnpm start
+    deps:
+      - proto
+      - install

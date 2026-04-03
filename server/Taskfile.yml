@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  default:
+    desc: Show available server tasks
+    cmds:
+      - task --list
+    silent: true
+
+  run:
+    desc: Run the gRPC server (optional GRPC_PORT=8080)
+    cmds:
+      - go run .
+    deps:
+      - build
+
+  build:
+    desc: Build the server binary
+    cmds:
+      - go build ./...
+    deps:
+      - tidy
+      - proto
+
+  tidy:
+    desc: Sync Go module dependencies
+    cmds:
+      - go mod tidy
+    deps:
+      - proto
+
+  proto:
+    desc: Regenerate Go protobuf and gRPC stubs from ../proto/HelloService.proto
+    cmds:
+      - mkdir -p pb
+      - protoc -I ../proto --go_out=pb --go-grpc_out=pb --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative ../proto/HelloService.proto
+    silent: true

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+includes:
+  client:
+    taskfile: ./client/Taskfile.yml
+    dir: ./client
+  server:
+    taskfile: ./server/Taskfile.yml
+    dir: ./server
