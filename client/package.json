@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "proto:create": "rm -rf ./src/proto && mkdir ./src/proto && grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/proto --ts_out=grpc_js:./src/proto --grpc_out=grpc_js:./src/proto --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` -I ../proto ../proto/*.proto",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "test": "bun test"
   },
   "devDependencies": {
     "grpc-tools": "^1.13.0",
