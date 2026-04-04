@@ -16,6 +16,7 @@
   },
   "module": "src/index.ts",
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.3"
+    "@grpc/grpc-js": "^1.14.3",
+    "path": "^0.12.7"
   }
 }

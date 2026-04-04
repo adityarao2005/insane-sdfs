@@ -11,6 +11,12 @@ includes:
     dir: ./client
 
 tasks:
+  proto:
+    desc: Regenerate all protobuf and gRPC stubs
+    cmds:
+      - task server:proto
+      - task client:proto
+
   test:
     desc: Run all tests
     cmds:

@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package pb;
+option go_package = "server/pb;pb";
+
+
+// upload file request-response messages
+message UploadFileRequestFragment {
+    string path = 1;
+    bytes data = 2;
+}
+
+message SuccessResponse {
+    bool success = 1;
+}
+
+// download file request-response messages
+message DownloadFileRequest {
+    string path = 1;
+}
+
+message DownloadFileResponseFragment {
+    bytes data = 1;
+}
+
+// file info message
+message FileInfo {
+    string path = 1;
+    int64 size = 2;
+    string last_modified_time = 3;
+    bool is_directory = 4;
+}
+
+message FileInfoRequest {
+    string path = 1;
+}
+
+/**
+ * The file system service definition.
+ */
+service FileSystem {
+
+    /**
+    * @param req The request message containing the file path and data.
+    * @return The response message indicating success or failure.
+    */
+    rpc UploadFile (stream UploadFileRequestFragment) returns (SuccessResponse) {}
+
+    /**
+    * @param req The request message containing the file path.
+    * @return The response message containing the file data.
+    */
+    rpc DownloadFile (DownloadFileRequest) returns (stream DownloadFileResponseFragment) {}
+
+    /**
+    * @param req The request message containing the file path.
+    * @return The response message indicating success or failure.
+    */
+    rpc DeleteFile (FileInfoRequest) returns (SuccessResponse) {}
+
+    /**
+    * @param req The request message containing the file path.
+    * @return The response message containing the file info.
+    */
+    rpc GetFileInfo (FileInfoRequest) returns (FileInfo) {}
+
+    /**
+    * @param req The request message containing the file path.
+    * @return The response messages containing the file info.
+    */
+    rpc ListFiles (FileInfoRequest) returns (stream FileInfo) {}
+
+    /**
+    * @param req The request message containing the directory path.
+    * @return The response message indicating success or failure.
+    */
+    rpc CreateDirectory (FileInfoRequest) returns (SuccessResponse) {}
+}
