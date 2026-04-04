@@ -48,7 +48,7 @@ func (s *GrpcFileSystemServer) Stop() error {
 
 type FileSystemServerImpl struct {
 	pb.UnimplementedFileSystemServer
-	service IFileSystemService
+	service *IFileSystemService
 }
 
 func (s FileSystemServerImpl) UploadFile(req grpc.ClientStreamingServer[pb.UploadFileRequestFragment, pb.SuccessResponse]) error {
@@ -184,12 +184,12 @@ func (s FileSystemServerImpl) CreateDirectory(_ context.Context, req *pb.FileInf
 }
 
 // helper function to create a new gRPC file system server implementation with the provided service
-func NewGrpcFileSystemServerImpl(service IFileSystemService) FileSystemServerImpl {
+func NewGrpcFileSystemServerImpl(service* IFileSystemService) FileSystemServerImpl {
 	return FileSystemServerImpl{service: service}
 }
 
 // adds the filesystem service
-func (s *GrpcFileSystemServer) AddService(service IFileSystemService) error {
+func (s *GrpcFileSystemServer) AddService(service* IFileSystemService) error {
 	pb.RegisterFileSystemServer(s.server, NewGrpcFileSystemServerImpl(service))
 
 	return nil

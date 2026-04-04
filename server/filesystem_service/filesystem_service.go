@@ -2,32 +2,130 @@ package filesystem_service
 
 import (
 	"bytes"
+	"io"
+	"os"
+	"path/filepath"
 )
 
 type FileInfo struct {
-	Size int64
-	Path string
+	Size         int64
+	Path         string
 	LastModified int64
-	IsDirectory bool
+	IsDirectory  bool
 }
 
-type IFileSystemService interface {
+type IFileSystemService struct {
+}
 
-	UploadFile(path string, data chan bytes.Buffer) error
+func (fss *IFileSystemService) UploadFile(path string, data chan bytes.Buffer) error {
 
-	DownloadFile(path string) (chan bytes.Buffer, error)
+	temp, err := os.CreateTemp(filepath.Dir(path), "upload-*")
 
-	DeleteFile(path string) error
+	if err != nil {
+		return err
+	}
 
-	GetFileInfo(path string) (FileInfo, error)
+	defer os.Remove(temp.Name())
 
-	ListFiles(directoryPath string) ([]FileInfo, error)
+	for chunk := range data {
+		if _, err := temp.Write(chunk.Bytes()); err != nil {
+			return err
+		}
+	}
 
-	CreateDirectory(directoryPath string) error
+	if err := temp.Close(); err != nil {
+		return err
+	}
+
+	if err := os.Rename(temp.Name(), path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fss *IFileSystemService) DownloadFile(path string) (chan bytes.Buffer, error) {
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	dataChannel := make(chan bytes.Buffer)
+
+	go func() {
+		defer file.Close()
+		defer close(dataChannel)
+
+		for {
+			buffer := make([]byte, 1024*1024) // 1MB buffer
+			n, err := file.Read(buffer)
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+				return
+			}
+
+			chunk := bytes.NewBuffer(buffer[:n])
+			dataChannel <- *chunk
+		}
+	}()
+
+	return dataChannel, nil
+}
+
+func (fss *IFileSystemService) DeleteFile(path string) error {
+	return os.RemoveAll(path)
+}
+
+func (fss *IFileSystemService) GetFileInfo(path string) (FileInfo, error) {
+
+	info, err := os.Stat(path)
+
+	if err != nil {
+		return FileInfo{}, err
+	}
+
+	return FileInfo{
+		Size:         info.Size(),
+		Path:         path,
+		LastModified: info.ModTime().Unix(),
+		IsDirectory:  info.IsDir(),
+	}, nil
+}
+
+func (fss *IFileSystemService) ListFiles(directoryPath string) ([]FileInfo, error) {
+
+	entries, err := os.ReadDir(directoryPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var fileInfos []FileInfo
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			return nil, err
+		}
+
+		fileInfo := FileInfo{
+			Size:         info.Size(),
+			Path:         filepath.Join(directoryPath, info.Name()),
+			LastModified: info.ModTime().Unix(),
+			IsDirectory:  info.IsDir(),
+		}
+		fileInfos = append(fileInfos, fileInfo)
+	}
+
+	return fileInfos, nil
+}
+
+func (fss *IFileSystemService) CreateDirectory(directoryPath string) error {
+	return os.MkdirAll(directoryPath, 0755)
 }
 
 type IFileSystemServiceServer interface {
-
 	AddService(service IFileSystemService) error
 
 	Start(port int) error

@@ -19,7 +19,7 @@ tasks:
   test:
     desc: Test the file server
     cmds:
-      - go test -v
+      - go test -v ./...
     deps:
       - build
 
