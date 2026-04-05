@@ -1,7 +1,9 @@
 import { getFileSystemProvider, getFileSystemServiceProviders, IFileSystemService } from "./filesystem/filesystem"
 import { Command } from "commander"
 import { color } from "console-log-colors"
-import { intro, outro, text, select, spinner, note } from '@clack/prompts';
+import { intro, outro, text, select, spinner, note, path } from '@clack/prompts';
+import { selectClient, selectLocalFile, selectRemoteDirectory, selectRemoteFile } from "./cmdline/selectors";
+import { streamToGenerator } from "./cmdline/stream-utils";
 
 const clients: Map<string, IFileSystemService> = new Map()
 
@@ -56,23 +58,113 @@ async function connectToFileSystemService() {
     }
 }
 
+
 async function uploadFile() {
-    // TODO: Implement file upload functionality
+    const client = await selectClient(clients)
+    if (!client) {
+        note(color.red(`No client found`))
+        return
+    }
+    const localFile = await selectLocalFile()
+    if (!localFile) {
+        return
+    }
+
+    const remotePath = await selectRemoteFile(client, false)
+    if (!remotePath) {
+        return
+    }
+
+    try {
+        const file = Bun.file(localFile.toString())
+        const stream = file.stream()
+        await client.uploadFile(remotePath.toString(), streamToGenerator(stream))
+        note(color.green(`File uploaded successfully to ${remotePath.toString()}`))
+    } catch (err) {
+        note(color.red(`Failed to upload file: ${err instanceof Error ? err.message : String(err)}`))
+    }
 }
 
 async function downloadFile() {
-    // TODO: Implement file upload functionality
+    const client = await selectClient(clients)
+    if (!client) {
+        note(color.red(`No client found`))
+        return
+    }
+
+    const remoteFile = await selectRemoteFile(client)
+    if (!remoteFile) {
+        return
+    }
+
+    const localFile = await selectLocalFile(false)
+    if (!localFile) {
+        return
+    }
+
+    try {
+        const fileStream = client.downloadFile(remoteFile.toString())
+        const writer = Bun.file(localFile.toString()).writer()
+
+        for await (const chunk of fileStream) {
+            await writer.write(chunk)
+        }
+
+        await writer.end()
+        note(color.green(`File downloaded successfully to ${localFile.toString()}`))
+    } catch (err) {
+        note(color.red(`Failed to download file: ${err instanceof Error ? err.message : String(err)}`))
+    }
 
 }
 
 async function listFiles() {
+    const client = await selectClient(clients)
+    if (!client) {
+        note(color.red(`No client found`))
+        return
+    }
 
-    // TODO: Implement file upload functionality
+    const directory = await selectRemoteDirectory(client)
+    if (!directory) {
+        note(color.red("No directory selected."))
+        return
+    }
+
+    const files = await client.listFiles(directory.toString())
+    note(color.green(files.join("\n")))
 }
 
 async function deleteFile() {
+    const client = await selectClient(clients)
+    if (!client) {
+        note(color.red(`No client found`))
+        return
+    }
 
-    // TODO: Implement file upload functionality
+    const remoteFile = await selectRemoteFile(client)
+    if (!remoteFile) {
+        return
+    }
+
+    await client.deleteFile(remoteFile.toString())
+    note(color.green(`File ${remoteFile.toString()} deleted successfully.`))
+}
+
+async function createDirectory() {
+    const client = await selectClient(clients)
+    if (!client) {
+        note(color.red(`No client found`))
+        return
+    }
+
+    const remoteDirectory = await selectRemoteDirectory(client, false)
+    if (!remoteDirectory) {
+        return
+    }
+
+    await client.createDirectory(remoteDirectory.toString())
+    note(color.green(`Directory ${remoteDirectory.toString()} created successfully.`))
 }
 
 async function homeScreen() {
@@ -88,7 +180,7 @@ async function homeScreen() {
             note(color.green(Array.from(clients.keys()).join("\n"))) // Display connected clients
         }
 
-        type Option = "connect" | "upload" | "download" | "list" | "delete" | "exit"
+        type Option = "connect" | "upload" | "download" | "list" | "delete" | "mkdir" | "exit"
 
         const options: { label: string; value: Option }[] = [
             { label: "Connect to File System Service", value: "connect" },
@@ -96,6 +188,7 @@ async function homeScreen() {
             { label: "Download a File", value: "download" },
             { label: "List Files in Directory", value: "list" },
             { label: "Delete a File", value: "delete" },
+            { label: "Create a directory", value: "mkdir" },
             { label: "Exit", value: "exit" }
         ]
 
@@ -119,6 +212,9 @@ async function homeScreen() {
                 break;
             case "delete":
                 await deleteFile()
+                break;
+            case "mkdir":
+                await createDirectory()
                 break;
             case "exit":
                 outro(color.yellow(`You selected: ${choice}. Have a nice evening!`))

@@ -1,6 +1,6 @@
 import { ChannelCredentials } from "@grpc/grpc-js";
 import { FileSystemClient } from "../proto/FileSystemService_grpc_pb";
-import { DownloadFileRequest, FileInfoRequest, PingRequest, UploadFileRequestFragment } from "../proto/FileSystemService_pb";
+import { DownloadFileRequest, FileInfo, FileInfoRequest, PingRequest, UploadFileRequestFragment } from "../proto/FileSystemService_pb";
 import { FileSystemServiceOptions, IFileSystemService, IFileSystemServiceProvider } from "./filesystem";
 
 export namespace gRPC {
@@ -90,8 +90,8 @@ export namespace gRPC {
 
                 const fileNames: string[] = [];
 
-                values.on("data", (response) => {
-                    fileNames.push(response.getName());
+                values.on("data", (response: FileInfo) => {
+                    fileNames.push(response.getPath());
                 });
 
                 values.on("end", () => {
