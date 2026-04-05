@@ -1,31 +1,10 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
-	"net"
 	"os"
-
-	"server/pb"
-
-	"google.golang.org/grpc"
+	"server/filesystem_service"
 )
-
-type greeterServer struct {
-	pb.UnimplementedGreeterServer
-}
-
-func (s *greeterServer) SayHello(_ context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
-	name := req.GetName()
-	if name == "" {
-		name = "world"
-	}
-
-	return &pb.HelloResponse{
-		Message: fmt.Sprintf("Hello, %s!", name),
-	}, nil
-}
 
 func main() {
 	port := os.Getenv("GRPC_PORT")
@@ -33,17 +12,26 @@ func main() {
 		port = "8080"
 	}
 
-	listenAddr := ":" + port
-	lis, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		log.Fatalf("failed to listen on %s: %v", listenAddr, err)
+	basePath := os.Getenv("FILESYSTEM_BASE_PATH")
+
+	if basePath == "" {
+		log.Printf("FILESYSTEM_BASE_PATH not set, using current directory as base path")
+		basePath = "./temp"
+		os.MkdirAll(basePath, 0o755)
 	}
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterGreeterServer(grpcServer, &greeterServer{})
+	fileSystemService, err := filesystem_service.NewFileSystemService(basePath)
+	if err != nil {
+		log.Fatalf("failed to initialize file system service: %v", err)
+	}
 
-	log.Printf("gRPC server listening on %s", listenAddr)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("gRPC server failed: %v", err)
+	grpcServer := filesystem_service.NewGrpcFileSystemServer()
+	if err := grpcServer.AddService(fileSystemService); err != nil {
+		log.Fatalf("failed to add grpc service: %v", err)
+	}
+
+	log.Printf("gRPC file system server is running on port %s with base path %q", port, basePath)
+	if err := grpcServer.Start(port); err != nil {
+		log.Fatalf("failed to start grpc server: %v", err)
 	}
 }
