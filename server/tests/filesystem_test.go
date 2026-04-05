@@ -12,8 +12,12 @@ import (
 func TestUploadAndDownloadFile(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
+	service, err := filesystem_service.NewFileSystemService(rootDir)
+	if err != nil {
+		t.Fatalf("create file system service: %v", err)
+	}
+
 	targetPath := filepath.Join(rootDir, "nested", "payload.txt")
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		t.Fatalf("create target directory: %v", err)
@@ -56,8 +60,12 @@ func TestUploadAndDownloadFile(t *testing.T) {
 func TestGetFileInfoAndListFiles(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
+	service, err := filesystem_service.NewFileSystemService(rootDir)
+	if err != nil {
+		t.Fatalf("create file system service: %v", err)
+	}
+
 	filePath := filepath.Join(rootDir, "alpha.txt")
 	dirPath := filepath.Join(rootDir, "nested")
 
@@ -106,8 +114,12 @@ func TestGetFileInfoAndListFiles(t *testing.T) {
 func TestCreateAndDeleteDirectory(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
+	service, err := filesystem_service.NewFileSystemService(rootDir)
+	if err != nil {
+		t.Fatalf("create file system service: %v", err)
+	}
+
 	targetDir := filepath.Join(rootDir, "a", "b", "c")
 
 	if err := service.CreateDirectory(targetDir); err != nil {

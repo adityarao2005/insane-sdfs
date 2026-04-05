@@ -11,6 +11,8 @@ program.version("1.0.0")
     .description("A CLI for interacting with a remote file system service to upload and download files.")
     .parse(process.argv)
 
+const options = program.opts()
+
 async function connectToFileSystemService() {
     // expects it to be in this format: "{protocol}://{host}:{port}"
     // example: "grpc://localhost:8080"
@@ -41,24 +43,36 @@ async function connectToFileSystemService() {
         return
     }
 
-    const clientKey = await text({ message: "Enter the alias for this client:", defaultValue: `${protocol}://${host}:${port}` })
-    clients.set(clientKey.toString(), client)
+
+    while (true) {
+        const clientKey = await text({ message: "Enter the alias for this client:", defaultValue: `${protocol}://${host}:${port}` })
+
+        if (clients.has(clientKey.toString())) {
+            note(color.red("A client with this alias already exists. Please choose a different alias."))
+        } else {
+            clients.set(clientKey.toString(), client)
+            break
+        }
+    }
 }
 
 async function uploadFile() {
-
+    // TODO: Implement file upload functionality
 }
 
 async function downloadFile() {
+    // TODO: Implement file upload functionality
 
 }
 
 async function listFiles() {
 
+    // TODO: Implement file upload functionality
 }
 
 async function deleteFile() {
 
+    // TODO: Implement file upload functionality
 }
 
 async function homeScreen() {
@@ -128,10 +142,4 @@ async function homeScreen() {
     process.exit(0)
 }
 
-async function main() {
-    const options = program.opts()
-
-    await homeScreen()
-}
-
-await main()
+await homeScreen()
