@@ -1,41 +1,27 @@
 import { ChannelCredentials } from "@grpc/grpc-js";
-import { FileSystemClient } from "./proto/FileSystemService_grpc_pb"
-import { DownloadFileRequest, FileInfoRequest, UploadFileRequestFragment } from "./proto/FileSystemService_pb";
-
-export interface IFileSystemService extends Disposable {
-
-    uploadFile(path: string, data: AsyncGenerator<Uint8Array>): Promise<void>;
-
-    downloadFile(path: string): AsyncGenerator<Uint8Array>;
-
-    deleteFile(path: string): Promise<void>;
-
-    getFileInfo(path: string): Promise<{ size: number; isDirectory: boolean; modifiedAt: Date }>;
-
-    listFiles(directoryPath: string): Promise<string[]>;
-
-    createDirectory(directoryPath: string): Promise<void>;
-
-}
-
-export type FileSystemServiceOptions = {
-    host: string;
-    port: number;
-    path: string;
-    authentication?: string;
-}
-
-export interface IFileSystemServiceProvider {
-    getFileSystemService(options?: FileSystemServiceOptions): IFileSystemService;
-}
+import { FileSystemClient } from "../proto/FileSystemService_grpc_pb";
+import { DownloadFileRequest, FileInfoRequest, PingRequest, UploadFileRequestFragment } from "../proto/FileSystemService_pb";
+import { FileSystemServiceOptions, IFileSystemService, IFileSystemServiceProvider } from "./filesystem";
 
 export namespace gRPC {
-    class IFileSystemServiceClient implements IFileSystemService {
+    class FileSystemServiceClient implements IFileSystemService {
 
         private grpcClient: FileSystemClient
 
         constructor(options: FileSystemServiceOptions) {
             this.grpcClient = new FileSystemClient(`${options.host}:${options.port}`, ChannelCredentials.createInsecure());
+        }
+
+        async ensureConnected(): Promise<void> {
+            return new Promise((resolve, reject) => {
+                this.grpcClient.ping(new PingRequest().setMessage("ping"), (err, response) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve();
+                    }
+                });
+            });
         }
 
         [Symbol.dispose](): void {
@@ -134,9 +120,12 @@ export namespace gRPC {
 
     export function createGrpcFileServiceProvider(): IFileSystemServiceProvider {
         return {
-            getFileSystemService: (opts?: FileSystemServiceOptions) => {
-                return new IFileSystemServiceClient(opts || { host: "localhost", port: 8080, path: "" });
-            }
+            getFileSystemService: async (opts?: FileSystemServiceOptions) => {
+                const client = new FileSystemServiceClient(opts || { host: "localhost", port: 8080 });
+                await client.ensureConnected();
+                return client;
+            },
+            protocol: "grpc"
         }
     }
 }

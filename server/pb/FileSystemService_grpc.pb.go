@@ -25,6 +25,7 @@ const (
 	FileSystem_GetFileInfo_FullMethodName     = "/pb.FileSystem/GetFileInfo"
 	FileSystem_ListFiles_FullMethodName       = "/pb.FileSystem/ListFiles"
 	FileSystem_CreateDirectory_FullMethodName = "/pb.FileSystem/CreateDirectory"
+	FileSystem_Ping_FullMethodName            = "/pb.FileSystem/Ping"
 )
 
 // FileSystemClient is the client API for FileSystem service.
@@ -58,6 +59,10 @@ type FileSystemClient interface {
 	// @param req The request message containing the directory path.
 	// @return The response message indicating success or failure.
 	CreateDirectory(ctx context.Context, in *FileInfoRequest, opts ...grpc.CallOption) (*SuccessResponse, error)
+	// *
+	// @param req The request message containing the ping message.
+	// @return The response message containing the pong message.
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PongResponse, error)
 }
 
 type fileSystemClient struct {
@@ -149,6 +154,16 @@ func (c *fileSystemClient) CreateDirectory(ctx context.Context, in *FileInfoRequ
 	return out, nil
 }
 
+func (c *fileSystemClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PongResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PongResponse)
+	err := c.cc.Invoke(ctx, FileSystem_Ping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileSystemServer is the server API for FileSystem service.
 // All implementations must embed UnimplementedFileSystemServer
 // for forward compatibility.
@@ -180,6 +195,10 @@ type FileSystemServer interface {
 	// @param req The request message containing the directory path.
 	// @return The response message indicating success or failure.
 	CreateDirectory(context.Context, *FileInfoRequest) (*SuccessResponse, error)
+	// *
+	// @param req The request message containing the ping message.
+	// @return The response message containing the pong message.
+	Ping(context.Context, *PingRequest) (*PongResponse, error)
 	mustEmbedUnimplementedFileSystemServer()
 }
 
@@ -207,6 +226,9 @@ func (UnimplementedFileSystemServer) ListFiles(*FileInfoRequest, grpc.ServerStre
 }
 func (UnimplementedFileSystemServer) CreateDirectory(context.Context, *FileInfoRequest) (*SuccessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateDirectory not implemented")
+}
+func (UnimplementedFileSystemServer) Ping(context.Context, *PingRequest) (*PongResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedFileSystemServer) mustEmbedUnimplementedFileSystemServer() {}
 func (UnimplementedFileSystemServer) testEmbeddedByValue()                    {}
@@ -312,6 +334,24 @@ func _FileSystem_CreateDirectory_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileSystem_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileSystemServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileSystem_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileSystemServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileSystem_ServiceDesc is the grpc.ServiceDesc for FileSystem service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -330,6 +370,10 @@ var FileSystem_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateDirectory",
 			Handler:    _FileSystem_CreateDirectory_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _FileSystem_Ping_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

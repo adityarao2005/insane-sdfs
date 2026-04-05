@@ -183,6 +183,14 @@ func (s FileSystemServerImpl) CreateDirectory(_ context.Context, req *pb.FileInf
 	return &pb.SuccessResponse{Success: true}, nil
 }
 
+func (s FileSystemServerImpl) Ping(_ context.Context, req *pb.PingRequest) (*pb.PongResponse, error) {
+	if s.service == nil {
+		return nil, fmt.Errorf("file system service not initialized")
+	}
+
+	return &pb.PongResponse{Message: "Pong: " + req.GetMessage()}, nil
+}
+
 // helper function to create a new gRPC file system server implementation with the provided service
 func NewGrpcFileSystemServerImpl(service* IFileSystemService) FileSystemServerImpl {
 	return FileSystemServerImpl{service: service}

@@ -48,6 +48,28 @@ function deserialize_pb_FileInfoRequest(buffer_arg) {
   return FileSystemService_pb.FileInfoRequest.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_pb_PingRequest(arg) {
+  if (!(arg instanceof FileSystemService_pb.PingRequest)) {
+    throw new Error('Expected argument of type pb.PingRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pb_PingRequest(buffer_arg) {
+  return FileSystemService_pb.PingRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_pb_PongResponse(arg) {
+  if (!(arg instanceof FileSystemService_pb.PongResponse)) {
+    throw new Error('Expected argument of type pb.PongResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_pb_PongResponse(buffer_arg) {
+  return FileSystemService_pb.PongResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_pb_SuccessResponse(arg) {
   if (!(arg instanceof FileSystemService_pb.SuccessResponse)) {
     throw new Error('Expected argument of type pb.SuccessResponse');
@@ -157,6 +179,20 @@ createDirectory: {
     requestDeserialize: deserialize_pb_FileInfoRequest,
     responseSerialize: serialize_pb_SuccessResponse,
     responseDeserialize: deserialize_pb_SuccessResponse,
+  },
+  // *
+// @param req The request message containing the ping message.
+// @return The response message containing the pong message.
+ping: {
+    path: '/pb.FileSystem/Ping',
+    requestStream: false,
+    responseStream: false,
+    requestType: FileSystemService_pb.PingRequest,
+    responseType: FileSystemService_pb.PongResponse,
+    requestSerialize: serialize_pb_PingRequest,
+    requestDeserialize: deserialize_pb_PingRequest,
+    responseSerialize: serialize_pb_PongResponse,
+    responseDeserialize: deserialize_pb_PongResponse,
   },
 };
 

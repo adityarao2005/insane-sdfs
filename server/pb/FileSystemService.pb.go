@@ -320,6 +320,94 @@ func (x *FileInfoRequest) GetPath() string {
 	return ""
 }
 
+type PingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PingRequest) Reset() {
+	*x = PingRequest{}
+	mi := &file_FileSystemService_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PingRequest) ProtoMessage() {}
+
+func (x *PingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_FileSystemService_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
+func (*PingRequest) Descriptor() ([]byte, []int) {
+	return file_FileSystemService_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PingRequest) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type PongResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PongResponse) Reset() {
+	*x = PongResponse{}
+	mi := &file_FileSystemService_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PongResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PongResponse) ProtoMessage() {}
+
+func (x *PongResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_FileSystemService_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PongResponse.ProtoReflect.Descriptor instead.
+func (*PongResponse) Descriptor() ([]byte, []int) {
+	return file_FileSystemService_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PongResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_FileSystemService_proto protoreflect.FileDescriptor
 
 const file_FileSystemService_proto_rawDesc = "" +
@@ -340,7 +428,11 @@ const file_FileSystemService_proto_rawDesc = "" +
 	"\x12last_modified_time\x18\x03 \x01(\tR\x10lastModifiedTime\x12!\n" +
 	"\fis_directory\x18\x04 \x01(\bR\visDirectory\"%\n" +
 	"\x0fFileInfoRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path2\x82\x03\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"'\n" +
+	"\vPingRequest\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"(\n" +
+	"\fPongResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xaf\x03\n" +
 	"\n" +
 	"FileSystem\x12D\n" +
 	"\n" +
@@ -350,7 +442,8 @@ const file_FileSystemService_proto_rawDesc = "" +
 	"DeleteFile\x12\x13.pb.FileInfoRequest\x1a\x13.pb.SuccessResponse\"\x00\x122\n" +
 	"\vGetFileInfo\x12\x13.pb.FileInfoRequest\x1a\f.pb.FileInfo\"\x00\x122\n" +
 	"\tListFiles\x12\x13.pb.FileInfoRequest\x1a\f.pb.FileInfo\"\x000\x01\x12=\n" +
-	"\x0fCreateDirectory\x12\x13.pb.FileInfoRequest\x1a\x13.pb.SuccessResponse\"\x00B\x0eZ\fserver/pb;pbb\x06proto3"
+	"\x0fCreateDirectory\x12\x13.pb.FileInfoRequest\x1a\x13.pb.SuccessResponse\"\x00\x12+\n" +
+	"\x04Ping\x12\x0f.pb.PingRequest\x1a\x10.pb.PongResponse\"\x00B\x0eZ\fserver/pb;pbb\x06proto3"
 
 var (
 	file_FileSystemService_proto_rawDescOnce sync.Once
@@ -364,7 +457,7 @@ func file_FileSystemService_proto_rawDescGZIP() []byte {
 	return file_FileSystemService_proto_rawDescData
 }
 
-var file_FileSystemService_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_FileSystemService_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_FileSystemService_proto_goTypes = []any{
 	(*UploadFileRequestFragment)(nil),    // 0: pb.UploadFileRequestFragment
 	(*SuccessResponse)(nil),              // 1: pb.SuccessResponse
@@ -372,6 +465,8 @@ var file_FileSystemService_proto_goTypes = []any{
 	(*DownloadFileResponseFragment)(nil), // 3: pb.DownloadFileResponseFragment
 	(*FileInfo)(nil),                     // 4: pb.FileInfo
 	(*FileInfoRequest)(nil),              // 5: pb.FileInfoRequest
+	(*PingRequest)(nil),                  // 6: pb.PingRequest
+	(*PongResponse)(nil),                 // 7: pb.PongResponse
 }
 var file_FileSystemService_proto_depIdxs = []int32{
 	0, // 0: pb.FileSystem.UploadFile:input_type -> pb.UploadFileRequestFragment
@@ -380,14 +475,16 @@ var file_FileSystemService_proto_depIdxs = []int32{
 	5, // 3: pb.FileSystem.GetFileInfo:input_type -> pb.FileInfoRequest
 	5, // 4: pb.FileSystem.ListFiles:input_type -> pb.FileInfoRequest
 	5, // 5: pb.FileSystem.CreateDirectory:input_type -> pb.FileInfoRequest
-	1, // 6: pb.FileSystem.UploadFile:output_type -> pb.SuccessResponse
-	3, // 7: pb.FileSystem.DownloadFile:output_type -> pb.DownloadFileResponseFragment
-	1, // 8: pb.FileSystem.DeleteFile:output_type -> pb.SuccessResponse
-	4, // 9: pb.FileSystem.GetFileInfo:output_type -> pb.FileInfo
-	4, // 10: pb.FileSystem.ListFiles:output_type -> pb.FileInfo
-	1, // 11: pb.FileSystem.CreateDirectory:output_type -> pb.SuccessResponse
-	6, // [6:12] is the sub-list for method output_type
-	0, // [0:6] is the sub-list for method input_type
+	6, // 6: pb.FileSystem.Ping:input_type -> pb.PingRequest
+	1, // 7: pb.FileSystem.UploadFile:output_type -> pb.SuccessResponse
+	3, // 8: pb.FileSystem.DownloadFile:output_type -> pb.DownloadFileResponseFragment
+	1, // 9: pb.FileSystem.DeleteFile:output_type -> pb.SuccessResponse
+	4, // 10: pb.FileSystem.GetFileInfo:output_type -> pb.FileInfo
+	4, // 11: pb.FileSystem.ListFiles:output_type -> pb.FileInfo
+	1, // 12: pb.FileSystem.CreateDirectory:output_type -> pb.SuccessResponse
+	7, // 13: pb.FileSystem.Ping:output_type -> pb.PongResponse
+	7, // [7:14] is the sub-list for method output_type
+	0, // [0:7] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -404,7 +501,7 @@ func file_FileSystemService_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_FileSystemService_proto_rawDesc), len(file_FileSystemService_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

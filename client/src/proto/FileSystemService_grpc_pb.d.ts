@@ -14,6 +14,7 @@ interface IFileSystemService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     getFileInfo: IFileSystemService_IGetFileInfo;
     listFiles: IFileSystemService_IListFiles;
     createDirectory: IFileSystemService_ICreateDirectory;
+    ping: IFileSystemService_IPing;
 }
 
 interface IFileSystemService_IUploadFile extends grpc.MethodDefinition<FileSystemService_pb.UploadFileRequestFragment, FileSystemService_pb.SuccessResponse> {
@@ -70,6 +71,15 @@ interface IFileSystemService_ICreateDirectory extends grpc.MethodDefinition<File
     responseSerialize: grpc.serialize<FileSystemService_pb.SuccessResponse>;
     responseDeserialize: grpc.deserialize<FileSystemService_pb.SuccessResponse>;
 }
+interface IFileSystemService_IPing extends grpc.MethodDefinition<FileSystemService_pb.PingRequest, FileSystemService_pb.PongResponse> {
+    path: "/pb.FileSystem/Ping";
+    requestStream: false;
+    responseStream: false;
+    requestSerialize: grpc.serialize<FileSystemService_pb.PingRequest>;
+    requestDeserialize: grpc.deserialize<FileSystemService_pb.PingRequest>;
+    responseSerialize: grpc.serialize<FileSystemService_pb.PongResponse>;
+    responseDeserialize: grpc.deserialize<FileSystemService_pb.PongResponse>;
+}
 
 export const FileSystemService: IFileSystemService;
 
@@ -80,6 +90,7 @@ export interface IFileSystemServer extends grpc.UntypedServiceImplementation {
     getFileInfo: grpc.handleUnaryCall<FileSystemService_pb.FileInfoRequest, FileSystemService_pb.FileInfo>;
     listFiles: grpc.handleServerStreamingCall<FileSystemService_pb.FileInfoRequest, FileSystemService_pb.FileInfo>;
     createDirectory: grpc.handleUnaryCall<FileSystemService_pb.FileInfoRequest, FileSystemService_pb.SuccessResponse>;
+    ping: grpc.handleUnaryCall<FileSystemService_pb.PingRequest, FileSystemService_pb.PongResponse>;
 }
 
 export interface IFileSystemClient {
@@ -100,6 +111,9 @@ export interface IFileSystemClient {
     createDirectory(request: FileSystemService_pb.FileInfoRequest, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
     createDirectory(request: FileSystemService_pb.FileInfoRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
     createDirectory(request: FileSystemService_pb.FileInfoRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
+    ping(request: FileSystemService_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
+    ping(request: FileSystemService_pb.PingRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
+    ping(request: FileSystemService_pb.PingRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
 }
 
 export class FileSystemClient extends grpc.Client implements IFileSystemClient {
@@ -121,4 +135,7 @@ export class FileSystemClient extends grpc.Client implements IFileSystemClient {
     public createDirectory(request: FileSystemService_pb.FileInfoRequest, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
     public createDirectory(request: FileSystemService_pb.FileInfoRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
     public createDirectory(request: FileSystemService_pb.FileInfoRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.SuccessResponse) => void): grpc.ClientUnaryCall;
+    public ping(request: FileSystemService_pb.PingRequest, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
+    public ping(request: FileSystemService_pb.PingRequest, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
+    public ping(request: FileSystemService_pb.PingRequest, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: FileSystemService_pb.PongResponse) => void): grpc.ClientUnaryCall;
 }

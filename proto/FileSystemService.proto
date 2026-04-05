@@ -35,6 +35,14 @@ message FileInfoRequest {
     string path = 1;
 }
 
+message PingRequest {
+    string message = 1;
+}
+
+message PongResponse {
+    string message = 1;
+}
+
 /**
  * The file system service definition.
  */
@@ -75,4 +83,10 @@ service FileSystem {
     * @return The response message indicating success or failure.
     */
     rpc CreateDirectory (FileInfoRequest) returns (SuccessResponse) {}
+
+    /**
+    * @param req The request message containing the ping message.
+    * @return The response message containing the pong message.
+    */
+    rpc Ping (PingRequest) returns (PongResponse) {}
 }
