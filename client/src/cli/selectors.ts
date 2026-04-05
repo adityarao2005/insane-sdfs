@@ -43,9 +43,11 @@ export async function selectLocalFile(options: SelectOption) {
             return filePath
         } else if (!expectExists) {
             const parentDir = Bun.file(path.dirname(filePath.toString()))
-            const parentExists = await parentDir.exists()
-            if (!parentExists) {
-                note(color.red("Parent directory of the selected file does not exist. Please select a valid path."))
+
+            try {
+                await parentDir.stat()
+            } catch (err) {
+                note(color.red(`Parent directory of the selected file does not exist: ${path.dirname(filePath.toString())}. Please select a valid path.`))
                 continue;
             }
 
