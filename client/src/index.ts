@@ -3,7 +3,7 @@ import { Command } from "commander"
 import { color } from "console-log-colors"
 import { intro, outro, text, select, spinner, note } from '@clack/prompts';
 
-const clients: IFileSystemService[] = []
+const clients: Map<string, IFileSystemService> = new Map()
 
 const program = new Command()
 
@@ -36,12 +36,13 @@ async function connectToFileSystemService() {
     let client: IFileSystemService;
     try {
         client = await fileSystemProvider.getFileSystemService({ host, port: parseInt(port) })
-        clients.push(client)
     } catch (err) {
         note(color.red(`Failed to connect to file system service at ${address.toString()}: ${err instanceof Error ? err.message : String(err)}`))
         return
     }
 
+    const clientKey = await text({ message: "Enter the alias for this client:", defaultValue: `${protocol}://${host}:${port}` })
+    clients.set(clientKey.toString(), client)
 }
 
 async function uploadFile() {
@@ -67,10 +68,10 @@ async function homeScreen() {
     while (true) {
         note(color.yellow("This CLI allows you to interact with a remote file system service to upload and download files. Here are the connected file clients:"))
 
-        if (clients.length === 0) {
+        if (clients.size === 0) {
             note(color.red("No clients connected. Please connect to a file system service to get started."))
         } else {
-            note(color.green(clients.map((_, index) => `Client ${index + 1}`).join("\n"))) // Display connected clients
+            note(color.green(Array.from(clients.keys()).join("\n"))) // Display connected clients
         }
 
         type Option = "connect" | "upload" | "download" | "list" | "delete" | "exit"
@@ -113,10 +114,15 @@ async function homeScreen() {
     }
 
 
-    while (clients.length > 0) {
-        const client = clients.pop()
+    while (clients.size > 0) {
+        const entry = clients.entries().next().value
 
-        client?.[Symbol.dispose]()
+        if (!entry) {
+            break
+        }
+
+        using _ = entry[1]
+        clients.delete(entry[0])
     }
 
     process.exit(0)
