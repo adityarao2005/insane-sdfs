@@ -27,8 +27,8 @@ func NewGrpcFileSystemServer() *GrpcFileSystemServer {
 	return &server
 }
 
-func (s *GrpcFileSystemServer) Start(port int) error {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+func (s *GrpcFileSystemServer) Start(port string) error {
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (s *GrpcFileSystemServer) Stop() error {
 
 type FileSystemServerImpl struct {
 	pb.UnimplementedFileSystemServer
-	service *IFileSystemService
+	service *FileSystemService
 }
 
 func (s FileSystemServerImpl) UploadFile(req grpc.ClientStreamingServer[pb.UploadFileRequestFragment, pb.SuccessResponse]) error {
@@ -192,12 +192,12 @@ func (s FileSystemServerImpl) Ping(_ context.Context, req *pb.PingRequest) (*pb.
 }
 
 // helper function to create a new gRPC file system server implementation with the provided service
-func NewGrpcFileSystemServerImpl(service* IFileSystemService) FileSystemServerImpl {
+func NewGrpcFileSystemServerImpl(service* FileSystemService) FileSystemServerImpl {
 	return FileSystemServerImpl{service: service}
 }
 
 // adds the filesystem service
-func (s *GrpcFileSystemServer) AddService(service* IFileSystemService) error {
+func (s *GrpcFileSystemServer) AddService(service* FileSystemService) error {
 	pb.RegisterFileSystemServer(s.server, NewGrpcFileSystemServerImpl(service))
 
 	return nil

@@ -12,7 +12,7 @@ import (
 func TestUploadAndDownloadFile(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.IFileSystemService{}
+	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
 	targetPath := filepath.Join(rootDir, "nested", "payload.txt")
 	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
@@ -56,7 +56,7 @@ func TestUploadAndDownloadFile(t *testing.T) {
 func TestGetFileInfoAndListFiles(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.IFileSystemService{}
+	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
 	filePath := filepath.Join(rootDir, "alpha.txt")
 	dirPath := filepath.Join(rootDir, "nested")
@@ -106,7 +106,7 @@ func TestGetFileInfoAndListFiles(t *testing.T) {
 func TestCreateAndDeleteDirectory(t *testing.T) {
 	t.Parallel()
 
-	service := filesystem_service.IFileSystemService{}
+	service := filesystem_service.FileSystemService{}
 	rootDir := t.TempDir()
 	targetDir := filepath.Join(rootDir, "a", "b", "c")
 

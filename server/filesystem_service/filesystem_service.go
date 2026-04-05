@@ -14,10 +14,10 @@ type FileInfo struct {
 	IsDirectory  bool
 }
 
-type IFileSystemService struct {
+type FileSystemService struct {
 }
 
-func (fss *IFileSystemService) UploadFile(path string, data chan bytes.Buffer) error {
+func (fss *FileSystemService) UploadFile(path string, data chan bytes.Buffer) error {
 
 	temp, err := os.CreateTemp(filepath.Dir(path), "upload-*")
 
@@ -44,7 +44,7 @@ func (fss *IFileSystemService) UploadFile(path string, data chan bytes.Buffer) e
 	return nil
 }
 
-func (fss *IFileSystemService) DownloadFile(path string) (chan bytes.Buffer, error) {
+func (fss *FileSystemService) DownloadFile(path string) (chan bytes.Buffer, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -75,11 +75,11 @@ func (fss *IFileSystemService) DownloadFile(path string) (chan bytes.Buffer, err
 	return dataChannel, nil
 }
 
-func (fss *IFileSystemService) DeleteFile(path string) error {
+func (fss *FileSystemService) DeleteFile(path string) error {
 	return os.RemoveAll(path)
 }
 
-func (fss *IFileSystemService) GetFileInfo(path string) (FileInfo, error) {
+func (fss *FileSystemService) GetFileInfo(path string) (FileInfo, error) {
 
 	info, err := os.Stat(path)
 
@@ -95,7 +95,7 @@ func (fss *IFileSystemService) GetFileInfo(path string) (FileInfo, error) {
 	}, nil
 }
 
-func (fss *IFileSystemService) ListFiles(directoryPath string) ([]FileInfo, error) {
+func (fss *FileSystemService) ListFiles(directoryPath string) ([]FileInfo, error) {
 
 	entries, err := os.ReadDir(directoryPath)
 	if err != nil {
@@ -121,12 +121,12 @@ func (fss *IFileSystemService) ListFiles(directoryPath string) ([]FileInfo, erro
 	return fileInfos, nil
 }
 
-func (fss *IFileSystemService) CreateDirectory(directoryPath string) error {
+func (fss *FileSystemService) CreateDirectory(directoryPath string) error {
 	return os.MkdirAll(directoryPath, 0755)
 }
 
 type IFileSystemServiceServer interface {
-	AddService(service IFileSystemService) error
+	AddService(service FileSystemService) error
 
 	Start(port int) error
 

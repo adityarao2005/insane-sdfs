@@ -118,6 +118,8 @@ async function homeScreen() {
 
         client?.[Symbol.dispose]()
     }
+
+    process.exit(0)
 }
 
 async function main() {
