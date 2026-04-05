@@ -6,14 +6,15 @@ import path from "path"
 type SelectOption = {
     expectExists?: boolean
     allowsDirectories?: boolean
+    prompt: string
 }
 
-export async function selectLocalFile(options: SelectOption = {}) {
+export async function selectLocalFile(options: SelectOption) {
     const { expectExists = true, allowsDirectories = false } = options;
 
     while (true) {
 
-        const filePath = (await pathPrompt({ message: "Select the file to upload:", directory: false }))
+        const filePath = expectExists ? await pathPrompt({ message: options.prompt, directory: false }) : await text({ message: options.prompt })
         if (isCancel(filePath)) {
             note(color.red("Selection canceled."))
             return filePath
@@ -53,11 +54,11 @@ export async function selectLocalFile(options: SelectOption = {}) {
     }
 }
 
-export async function selectRemoteFile(client: IFileSystemService, options: SelectOption = {}) {
+export async function selectRemoteFile(client: IFileSystemService, options: SelectOption) {
     const { expectExists = true, allowsDirectories = false } = options;
 
     while (true) {
-        const filePath = await text({ message: "Enter the path of the file to download from the remote file system:" })
+        const filePath = await text({ message: options.prompt })
         if (isCancel(filePath)) {
             note(color.red("Selection canceled."))
             return filePath

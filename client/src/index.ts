@@ -7,6 +7,7 @@ import { streamToGenerator } from "./cmdline/stream-utils";
 
 const clients: Map<string, IFileSystemService> = new Map()
 
+
 const program = new Command()
 
 program.version("1.0.0")
@@ -65,6 +66,7 @@ async function connectToFileSystemService() {
             break
         }
     }
+
 }
 
 
@@ -79,7 +81,11 @@ async function uploadFile() {
         note(color.red(`No client found`))
         return
     }
-    const localFile = await selectLocalFile()
+    const localFile = await selectLocalFile({
+        expectExists: true,
+        allowsDirectories: false,
+        prompt: "Select the file to upload:"
+    })
     if (isCancel(localFile)) {
         note(color.red("Selection canceled."))
         return
@@ -89,7 +95,11 @@ async function uploadFile() {
         return
     }
 
-    const remotePath = await selectRemoteFile(client, { expectExists: false, allowsDirectories: false })
+    const remotePath = await selectRemoteFile(client, {
+        expectExists: false,
+        allowsDirectories: false,
+        prompt: "Enter the remote path where the file should be uploaded:"
+    })
     if (isCancel(remotePath)) {
         note(color.red("Selection canceled."))
         return
@@ -107,6 +117,7 @@ async function uploadFile() {
     } catch (err) {
         note(color.red(`Failed to upload file: ${err instanceof Error ? err.message : String(err)}`))
     }
+
 }
 
 async function downloadFile() {
@@ -116,7 +127,11 @@ async function downloadFile() {
         return
     }
 
-    const remoteFile = await selectRemoteFile(client, { expectExists: true, allowsDirectories: false })
+    const remoteFile = await selectRemoteFile(client, {
+        expectExists: true,
+        allowsDirectories: false,
+        prompt: "Enter the remote path of the file to download:"
+    })
     if (isCancel(remoteFile)) {
         note(color.red("Selection canceled."))
         return
@@ -126,7 +141,11 @@ async function downloadFile() {
         return
     }
 
-    const localFile = await selectLocalFile({ expectExists: false, allowsDirectories: false })
+    const localFile = await selectLocalFile({
+        expectExists: false,
+        allowsDirectories: false,
+        prompt: "Enter the local path where the file should be downloaded:"
+    })
     if (isCancel(localFile)) {
         note(color.red("Selection canceled."))
         return
@@ -171,6 +190,7 @@ async function listFiles() {
 
     const files = await client.listFiles(directory.toString())
     note(color.green(files.join("\n")))
+
 }
 
 async function deleteFile() {
@@ -182,7 +202,8 @@ async function deleteFile() {
 
     const remoteFile = await selectRemoteFile(client, {
         expectExists: true,
-        allowsDirectories: true
+        allowsDirectories: true,
+        prompt: "Enter the remote path of the file to delete:"
     })
     if (isCancel(remoteFile)) {
         note(color.red("Selection canceled."))
@@ -195,6 +216,7 @@ async function deleteFile() {
 
     await client.deleteFile(remoteFile.toString())
     note(color.green(`File ${remoteFile.toString()} deleted successfully.`))
+
 }
 
 async function createDirectory() {
@@ -216,6 +238,7 @@ async function createDirectory() {
 
     await client.createDirectory(remoteDirectory.toString())
     note(color.green(`Directory ${remoteDirectory.toString()} created successfully.`))
+
 }
 
 async function homeScreen() {
