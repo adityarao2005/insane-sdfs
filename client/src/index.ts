@@ -1,7 +1,7 @@
 import { getFileSystemProvider, getFileSystemServiceProviders, IFileSystemService } from "./filesystem/filesystem"
 import { Command } from "commander"
 import { color } from "console-log-colors"
-import { intro, outro, text, select, spinner, note, path } from '@clack/prompts';
+import { intro, outro, text, select, spinner, note, path, isCancel } from '@clack/prompts';
 import { selectClient, selectLocalFile, selectRemoteDirectory, selectRemoteFile } from "./cmdline/selectors";
 import { streamToGenerator } from "./cmdline/stream-utils";
 
@@ -19,6 +19,11 @@ async function connectToFileSystemService() {
     // expects it to be in this format: "{protocol}://{host}:{port}"
     // example: "grpc://localhost:8080"
     const address = await text({ message: "Enter the address of the file system service (format: {protocol}://{host}:{port}):" })
+    if (isCancel(address)) {
+        note(color.red("Selection canceled."))
+        return
+    }
+
     const [protocol, hostPort] = address.toString().split("://")
     if (!protocol || !hostPort) {
         note(color.red("Invalid address format. Please use the format: {protocol}://{host}:{port}"))
@@ -48,6 +53,10 @@ async function connectToFileSystemService() {
 
     while (true) {
         const clientKey = await text({ message: "Enter the alias for this client:", defaultValue: `${protocol}://${host}:${port}` })
+        if (isCancel(clientKey)) {
+            note(color.red("Selection canceled."))
+            return
+        }
 
         if (clients.has(clientKey.toString())) {
             note(color.red("A client with this alias already exists. Please choose a different alias."))
@@ -61,17 +70,32 @@ async function connectToFileSystemService() {
 
 async function uploadFile() {
     const client = await selectClient(clients)
+    if (isCancel(client)) {
+        note(color.red("Selection canceled."))
+        return
+    }
+
     if (!client) {
         note(color.red(`No client found`))
         return
     }
     const localFile = await selectLocalFile()
+    if (isCancel(localFile)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!localFile) {
+        note(color.red("No local file selected."))
         return
     }
 
     const remotePath = await selectRemoteFile(client, false)
+    if (isCancel(remotePath)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!remotePath) {
+        note(color.red("No remote file path selected."))
         return
     }
 
@@ -87,18 +111,28 @@ async function uploadFile() {
 
 async function downloadFile() {
     const client = await selectClient(clients)
-    if (!client) {
-        note(color.red(`No client found`))
+    if (isCancel(client) || !client) {
+        note(color.red("Selection canceled."))
         return
     }
 
     const remoteFile = await selectRemoteFile(client)
+    if (isCancel(remoteFile)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!remoteFile) {
+        note(color.red("No remote file selected."))
         return
     }
 
     const localFile = await selectLocalFile(false)
+    if (isCancel(localFile)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!localFile) {
+        note(color.red("No local file path selected."))
         return
     }
 
@@ -120,12 +154,16 @@ async function downloadFile() {
 
 async function listFiles() {
     const client = await selectClient(clients)
-    if (!client) {
-        note(color.red(`No client found`))
+    if (isCancel(client) || !client) {
+        note(color.red("Selection canceled."))
         return
     }
 
     const directory = await selectRemoteDirectory(client)
+    if (isCancel(directory)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!directory) {
         note(color.red("No directory selected."))
         return
@@ -137,13 +175,18 @@ async function listFiles() {
 
 async function deleteFile() {
     const client = await selectClient(clients)
-    if (!client) {
-        note(color.red(`No client found`))
+    if (isCancel(client) || !client) {
+        note(color.red("Selection canceled."))
         return
     }
 
     const remoteFile = await selectRemoteFile(client)
+    if (isCancel(remoteFile)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!remoteFile) {
+        note(color.red("No remote file selected."))
         return
     }
 
@@ -153,13 +196,18 @@ async function deleteFile() {
 
 async function createDirectory() {
     const client = await selectClient(clients)
-    if (!client) {
-        note(color.red(`No client found`))
+    if (isCancel(client) || !client) {
+        note(color.red("Selection canceled."))
         return
     }
 
     const remoteDirectory = await selectRemoteDirectory(client, false)
+    if (isCancel(remoteDirectory)) {
+        note(color.red("Selection canceled."))
+        return
+    }
     if (!remoteDirectory) {
+        note(color.red("No remote directory selected."))
         return
     }
 
@@ -196,6 +244,11 @@ async function homeScreen() {
             message: color.cyan("Please select an option:"),
             options
         })
+
+        if (isCancel(choice)) {
+            outro(color.yellow("No option selected. Exiting. Have a nice evening!"))
+            break
+        }
 
         switch (choice) {
             case "connect":

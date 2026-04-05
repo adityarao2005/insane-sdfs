@@ -1,4 +1,4 @@
-import { note, path as pathPrompt, select, text } from "@clack/prompts"
+import { isCancel, note, path as pathPrompt, select, text } from "@clack/prompts"
 import { color } from "console-log-colors"
 import { IFileSystemService } from "../filesystem/filesystem"
 import path from "path"
@@ -8,6 +8,11 @@ export async function selectLocalFile(expectExists: boolean = true) {
     while (true) {
 
         const filePath = (await pathPrompt({ message: "Select the file to upload:", directory: false }))
+        if (isCancel(filePath)) {
+            note(color.red("Selection canceled."))
+            return filePath
+        }
+
         if (!filePath) {
             note(color.red("No file selected."))
             return
@@ -46,6 +51,11 @@ export async function selectRemoteFile(client: IFileSystemService, expectExists:
 
     while (true) {
         const filePath = await text({ message: "Enter the path of the file to download from the remote file system:" })
+        if (isCancel(filePath)) {
+            note(color.red("Selection canceled."))
+            return filePath
+        }
+
         if (!filePath) {
             note(color.red("No file path entered."))
             return
@@ -82,6 +92,11 @@ export async function selectRemoteDirectory(client: IFileSystemService, expectEx
 
     while (true) {
         const filePath = await text({ message: "Enter the path of the directory to select from the remote file system:" })
+        if (isCancel(filePath)) {
+            note(color.red("Selection canceled."))
+            return filePath
+        }
+
         if (!filePath) {
             note(color.red("No file path entered."))
             return
@@ -121,6 +136,11 @@ export async function selectClient(clients: Map<string, IFileSystemService>) {
         }
 
         const alias = await select({ message: "Enter the alias of the client to use:", options: opts.map((v): { label: string; value: string } => ({ label: v, value: v })) })
+        if (isCancel(alias)) {
+            note(color.red("Selection canceled."))
+            return alias
+        }
+
         if (!alias) {
             note(color.red("No alias entered."))
             return
