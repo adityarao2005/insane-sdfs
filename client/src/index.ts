@@ -89,7 +89,7 @@ async function uploadFile() {
         return
     }
 
-    const remotePath = await selectRemoteFile(client, false)
+    const remotePath = await selectRemoteFile(client, { expectExists: false, allowsDirectories: false })
     if (isCancel(remotePath)) {
         note(color.red("Selection canceled."))
         return
@@ -116,7 +116,7 @@ async function downloadFile() {
         return
     }
 
-    const remoteFile = await selectRemoteFile(client)
+    const remoteFile = await selectRemoteFile(client, { expectExists: true, allowsDirectories: false })
     if (isCancel(remoteFile)) {
         note(color.red("Selection canceled."))
         return
@@ -126,7 +126,7 @@ async function downloadFile() {
         return
     }
 
-    const localFile = await selectLocalFile(false)
+    const localFile = await selectLocalFile({ expectExists: false, allowsDirectories: false })
     if (isCancel(localFile)) {
         note(color.red("Selection canceled."))
         return
@@ -180,7 +180,10 @@ async function deleteFile() {
         return
     }
 
-    const remoteFile = await selectRemoteFile(client)
+    const remoteFile = await selectRemoteFile(client, {
+        expectExists: true,
+        allowsDirectories: true
+    })
     if (isCancel(remoteFile)) {
         note(color.red("Selection canceled."))
         return

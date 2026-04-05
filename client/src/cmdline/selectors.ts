@@ -3,7 +3,13 @@ import { color } from "console-log-colors"
 import { IFileSystemService } from "../filesystem/filesystem"
 import path from "path"
 
-export async function selectLocalFile(expectExists: boolean = true) {
+type SelectOption = {
+    expectExists?: boolean
+    allowsDirectories?: boolean
+}
+
+export async function selectLocalFile(options: SelectOption = {}) {
+    const { expectExists = true, allowsDirectories = false } = options;
 
     while (true) {
 
@@ -28,7 +34,7 @@ export async function selectLocalFile(expectExists: boolean = true) {
 
             const stat = await file.stat()
 
-            if (stat.isDirectory()) {
+            if (stat.isDirectory() && !allowsDirectories) {
                 note(color.red("Selected path is a directory. Please select a file."))
                 continue;
             }
@@ -47,7 +53,8 @@ export async function selectLocalFile(expectExists: boolean = true) {
     }
 }
 
-export async function selectRemoteFile(client: IFileSystemService, expectExists: boolean = true) {
+export async function selectRemoteFile(client: IFileSystemService, options: SelectOption = {}) {
+    const { expectExists = true, allowsDirectories = false } = options;
 
     while (true) {
         const filePath = await text({ message: "Enter the path of the file to download from the remote file system:" })
@@ -64,7 +71,7 @@ export async function selectRemoteFile(client: IFileSystemService, expectExists:
         try {
             const fileInfo = await client.getFileInfo(filePath.toString())
 
-            if (fileInfo.isDirectory) {
+            if (fileInfo.isDirectory && !allowsDirectories) {
                 note(color.red("Selected path is a directory. Please select a file."))
                 continue;
             }
