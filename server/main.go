@@ -26,23 +26,6 @@ func GetBasePath() string {
 	return basePath
 }
 
-func NewGrpcFileSystemServerOpts(certificateService *auth.ICertificateService) (*filesystem_service.GrpcFileSystemServerOpts, error) {
-	serverCert, err := (*certificateService).GetServerCertificate()
-	if err != nil {
-		return nil, err
-	}
-
-	certPool, err := (*certificateService).GetCertificatePool()
-	if err != nil {
-		return nil, err
-	}
-
-	return &filesystem_service.GrpcFileSystemServerOpts{
-		ServerCert: *serverCert,
-		ClientCertPool: certPool,
-	}, nil
-}
-
 func main() {
 	port := GetPort()
 	basePath := GetBasePath()
@@ -65,14 +48,8 @@ func main() {
 		log.Fatalf("failed to initialize file system service: %v", err)
 	}
 
-	// create the gRPC server options with TLS configuration
-	grpcServerOpts, err := NewGrpcFileSystemServerOpts(certificateService)
-	if err != nil {
-		log.Fatalf("failed to initialize gRPC server options: %v", err)
-	}
-
 	// create the grpc server with the specified options
-	grpcServer := filesystem_service.NewGrpcFileSystemServer(grpcServerOpts)
+	grpcServer := filesystem_service.NewGrpcFileSystemServer(certificateService)
 	if err := grpcServer.AddService(fileSystemService); err != nil {
 		log.Fatalf("failed to add grpc service: %v", err)
 	}

@@ -6,7 +6,7 @@ type ITokenService interface {
 	// RevokeToken invalidates a token
 	RevokeToken(token string) error
 	// AcceptToken validates a token and deletes it if valid (one-time use)
-	AcceptToken(token string) (bool, error)
+	AcceptToken(token string) error
 }
 
 func NewTokenService() (*ITokenService, error) {
