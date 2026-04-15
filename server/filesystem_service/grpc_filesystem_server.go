@@ -19,7 +19,7 @@ type GrpcFileSystemServer struct {
 	listener net.Listener
 }
 
-func NewGrpcFileSystemServer(certificateService *auth.ICertificateService) *GrpcFileSystemServer {
+func NewGrpcFileSystemServer(certificateService auth.ICertificateService) *GrpcFileSystemServer {
 	// create the server
 	server := GrpcFileSystemServer{}
 	var opts []grpc.ServerOption
@@ -27,7 +27,7 @@ func NewGrpcFileSystemServer(certificateService *auth.ICertificateService) *Grpc
 	// if the server options aren't null then we can set up TLS for the server
 	if certificateService != nil {
 		// get the servers tls config from the certificate service
-		tlsConfig, err := (*certificateService).GetServerTlsConfig()
+		tlsConfig, err := certificateService.GetServerTlsConfig()
 		if err != nil {
 			fmt.Printf("Error getting server TLS config: %v\n", err)
 			return nil

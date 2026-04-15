@@ -31,16 +31,10 @@ func main() {
 	basePath := GetBasePath()
 
 	// create the token service
-	tokenService, err := auth.NewTokenService()
-	if err != nil {
-		log.Fatalf("failed to initialize token service: %v", err)
-	}
+	tokenService := auth.NewTokenService()
 
 	// create the certificate service
-	certificateService, err := auth.NewCertificateService()
-	if err != nil {
-		log.Fatalf("failed to initialize certificate service: %v", err)
-	}
+	certificateService := auth.NewCertificateService()
 
 	// cerate the file system service
 	fileSystemService, err := filesystem_service.NewFileSystemService(basePath)

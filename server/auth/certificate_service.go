@@ -99,7 +99,7 @@ func (s *CertificateService) GetServerTlsConfig() (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
-func NewCertificateService() (*ICertificateService, error) {
+func NewCertificateService() ICertificateService {
 	// TODO: Implement certificate service initialization logic
-	return nil, nil
+	return nil
 }
