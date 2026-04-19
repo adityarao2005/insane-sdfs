@@ -141,6 +141,7 @@ func integrationTestSetup(t *testing.T) (*grpc.ClientConn, string) {
 
 	go grpcServer.Start(PORT)
 	t.Cleanup(func() {
+		// Stop the in-process gRPC server when the test exits.
 		grpcServer.Stop()
 	})
 
@@ -149,6 +150,7 @@ func integrationTestSetup(t *testing.T) (*grpc.ClientConn, string) {
 
 	conn := createGrpcClient(t, certificateService, token, adminService)
 	t.Cleanup(func() {
+		// Ensure client connections are always released.
 		conn.Close()
 	})
 
@@ -156,6 +158,7 @@ func integrationTestSetup(t *testing.T) (*grpc.ClientConn, string) {
 }
 
 func callUnaryGetFileInfo(t *testing.T, fss pb.FileSystemClient, path string) *pb.FileInfo {
+	// Bound each RPC with a timeout so failures don't hang the suite.
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -182,6 +185,7 @@ func callUnaryListFiles(t *testing.T, fss pb.FileSystemClient, path string) []*p
 
 	files := make([]*pb.FileInfo, 0)
 
+	// ListFiles is server-streaming; consume until EOF.
 	for {
 		info, err := resp.Recv()
 		if err != nil {
@@ -230,6 +234,7 @@ func callUnaryUploadFile(t *testing.T, fss pb.FileSystemClient, path string, dat
 		t.Fatalf("failed to upload file: %v", err)
 	}
 
+	// UploadFile is client-streaming; send chunks then close to commit.
 	for buf := range data {
 		if err := stream.Send(&pb.UploadFileRequestFragment{
 			Data: buf.Bytes(),
@@ -257,6 +262,7 @@ func callUnaryDownloadFile(t *testing.T, fss pb.FileSystemClient, path string) b
 
 	var data bytes.Buffer
 
+	// DownloadFile is server-streaming; aggregate chunks into one buffer.
 	for {
 		info, err := resp.Recv()
 		if err != nil {
@@ -273,6 +279,7 @@ func callUnaryDownloadFile(t *testing.T, fss pb.FileSystemClient, path string) b
 }
 
 func TestIntegrationUploadAndDownloadFile(t *testing.T) {
+	// End-to-end file transfer over mTLS gRPC.
 	conn, rootDir := integrationTestSetup(t)
 	fss := pb.NewFileSystemClient(conn)
 
@@ -283,6 +290,7 @@ func TestIntegrationUploadAndDownloadFile(t *testing.T) {
 
 	input := make(chan bytes.Buffer)
 	go func() {
+		// Send two chunks so streaming code paths are exercised.
 		input <- *bytes.NewBufferString("hello ")
 		input <- *bytes.NewBufferString("world")
 		close(input)
@@ -306,6 +314,7 @@ func TestIntegrationUploadAndDownloadFile(t *testing.T) {
 }
 
 func TestIntegrationGetFileInfoAndListFiles(t *testing.T) {
+	// Validate metadata RPCs against a known file + directory layout.
 	conn, rootDir := integrationTestSetup(t)
 	fss := pb.NewFileSystemClient(conn)
 
@@ -346,6 +355,7 @@ func TestIntegrationGetFileInfoAndListFiles(t *testing.T) {
 }
 
 func TestIntegrationCreateAndDeleteDirectory(t *testing.T) {
+	// Validate directory lifecycle operations through gRPC.
 	conn, rootDir := integrationTestSetup(t)
 	fss := pb.NewFileSystemClient(conn)
 
