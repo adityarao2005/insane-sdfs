@@ -117,10 +117,8 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("failed to start admin service: %v", err)
 	}
 
-	// start the gRPC server
-	if err := grpcServer.Start(PORT); err != nil {
-		t.Fatalf("failed to start grpc server: %v", err)
-	}
+	go grpcServer.Start(PORT)
+	defer grpcServer.Stop()
 
 	// issue a token for adding a device
 	token := issueDeviceCreationRequest(t, adminService)
