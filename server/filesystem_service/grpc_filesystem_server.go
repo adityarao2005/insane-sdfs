@@ -6,22 +6,36 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"server/auth"
 	"server/pb"
 	"strconv"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
-
-// the file server implementation using gRPC
 
 type GrpcFileSystemServer struct {
 	server   *grpc.Server
 	listener net.Listener
 }
 
-func NewGrpcFileSystemServer() *GrpcFileSystemServer {
+func NewGrpcFileSystemServer(certificateService auth.ICertificateService) *GrpcFileSystemServer {
+	// create the server
 	server := GrpcFileSystemServer{}
 	var opts []grpc.ServerOption
+	
+	// if the server options aren't null then we can set up TLS for the server
+	if certificateService != nil {
+		// get the servers tls config from the certificate service
+		tlsConfig, err := certificateService.GetServerTlsConfig()
+		if err != nil {
+			fmt.Printf("Error getting server TLS config: %v\n", err)
+			return nil
+		}
+
+		opts = append(opts, grpc.Creds(credentials.NewTLS(tlsConfig)))
+	}
+	// create the gRPC server with the specified options
 	server.server = grpc.NewServer(opts...)
 
 	return &server

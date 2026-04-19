@@ -3,33 +3,39 @@ package main
 import (
 	"log"
 	"os"
-	"server/filesystem_service"
 )
 
-func main() {
+func GetPort() string {
 	port := os.Getenv("GRPC_PORT")
 	if port == "" {
+		log.Printf("GRPC_PORT not set, defaulting to 8080")
 		port = "8080"
 	}
+	return port
+}
 
+func GetBasePath() string {
 	basePath := os.Getenv("FILESYSTEM_BASE_PATH")
-
 	if basePath == "" {
 		log.Printf("FILESYSTEM_BASE_PATH not set, using current directory as base path")
 		basePath = "./temp"
 		os.MkdirAll(basePath, 0o755)
 	}
+	return basePath
+}
 
-	fileSystemService, err := filesystem_service.NewFileSystemService(basePath)
-	if err != nil {
-		log.Fatalf("failed to initialize file system service: %v", err)
+func main() {
+	port := GetPort()
+	basePath := GetBasePath()
+
+	_, _, _, grpcServer, adminService := CreateServices(basePath)
+
+	// start the admin service
+	if err := adminService.Start(); err != nil {
+		log.Fatalf("failed to start admin service: %v", err)
 	}
 
-	grpcServer := filesystem_service.NewGrpcFileSystemServer()
-	if err := grpcServer.AddService(fileSystemService); err != nil {
-		log.Fatalf("failed to add grpc service: %v", err)
-	}
-
+	// start the gRPC server
 	log.Printf("gRPC file system server is running on port %s with base path %q", port, basePath)
 	if err := grpcServer.Start(port); err != nil {
 		log.Fatalf("failed to start grpc server: %v", err)

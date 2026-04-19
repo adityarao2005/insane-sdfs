@@ -1,19 +1,17 @@
-package tests
+package filesystem_service
 
 import (
 	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"server/filesystem_service"
 )
 
 func TestUploadAndDownloadFile(t *testing.T) {
 	t.Parallel()
 
 	rootDir := t.TempDir()
-	service, err := filesystem_service.NewFileSystemService(rootDir)
+	service, err := NewFileSystemService(rootDir)
 	if err != nil {
 		t.Fatalf("create file system service: %v", err)
 	}
@@ -61,7 +59,7 @@ func TestGetFileInfoAndListFiles(t *testing.T) {
 	t.Parallel()
 
 	rootDir := t.TempDir()
-	service, err := filesystem_service.NewFileSystemService(rootDir)
+	service, err := NewFileSystemService(rootDir)
 	if err != nil {
 		t.Fatalf("create file system service: %v", err)
 	}
@@ -115,7 +113,7 @@ func TestCreateAndDeleteDirectory(t *testing.T) {
 	t.Parallel()
 
 	rootDir := t.TempDir()
-	service, err := filesystem_service.NewFileSystemService(rootDir)
+	service, err := NewFileSystemService(rootDir)
 	if err != nil {
 		t.Fatalf("create file system service: %v", err)
 	}
