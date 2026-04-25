@@ -18,11 +18,6 @@ func TestCertificateService(t *testing.T) {
 		t.Fatalf("failed to create certificate service: %v", err)
 	}
 
-	// check if the server certificate is generated
-	if service.GetServerCertificate().Certificate == nil {
-		t.Fatalf("server certificate not loaded")
-	}
-
 	// check if the client CA certificate is generated
 	certPool, err := service.GetClientCACertificatePool()
 	if err != nil {

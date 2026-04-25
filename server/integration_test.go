@@ -28,13 +28,18 @@ const PORT = "8080"
 
 var addr = flag.String("addr", "localhost:"+PORT, "The address of the grpc server")
 
-func getRequiredCertificates(t *testing.T, certificateService auth.ICertificateService) (tls.Certificate, *x509.CertPool) {
+func getRequiredCertificates(t *testing.T, certificateService auth.ICertificateService) (*x509.CertPool, *x509.CertPool) {
 	clientCAPool, err := certificateService.GetClientCACertificatePool()
 	if err != nil {
 		t.Fatalf("failed to get client CA certificate pool: %v", err)
 	}
 
-	return certificateService.GetServerCertificate(), clientCAPool
+	serverCAPool, err := certificateService.GetServerCACertificate()
+	if err != nil {
+		t.Fatalf("failed to get server CA certificate: %v", err)
+	}
+
+	return serverCAPool, clientCAPool
 }
 
 func issueDeviceCreationRequest(t *testing.T, adminService *AdminService) string {
@@ -96,27 +101,14 @@ func createDevice(t *testing.T, token string, adminService *AdminService) (strin
 
 func createGrpcClient(t *testing.T, certificateService auth.ICertificateService, token string, adminService *AdminService) *grpc.ClientConn {
 	// get the required certificates for the client
-	serverCert, clientCAPool := getRequiredCertificates(t, certificateService)
-
-	// The client must trust the server certificate chain.
-	// In this test setup the server cert is self-signed, so add it explicitly to RootCAs.
-	serverRootPool := x509.NewCertPool()
-	if serverCert.Leaf != nil {
-		serverRootPool.AddCert(serverCert.Leaf)
-	} else {
-		parsedServerCert, err := x509.ParseCertificate(serverCert.Certificate[0])
-		if err != nil {
-			t.Fatalf("failed to parse server certificate: %v", err)
-		}
-		serverRootPool.AddCert(parsedServerCert)
-	}
+	serverCAPool, clientCAPool := getRequiredCertificates(t, certificateService)
 
 	// add the device
 	hostname, cert := createDevice(t, token, adminService)
 	tlsConfig := &tls.Config{
 		ServerName:   hostname,
 		Certificates: []tls.Certificate{cert},
-		RootCAs:      serverRootPool,
+		RootCAs:      serverCAPool,
 		ClientCAs:    clientCAPool,
 	}
 
