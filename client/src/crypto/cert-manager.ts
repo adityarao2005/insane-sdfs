@@ -138,6 +138,7 @@ class CertificateManager implements ICertificateManager {
         const pemEncodedString = certReq.toString("pem");
 
         // export csr in PEM format to identities/{alias}-csr.pem
+        await mkdir(`${this.certificateDirectory}/identities`, { recursive: true });
         await writeFile(`${this.certificateDirectory}/identities/${alias}-csr.pem`, pemEncodedString, "utf8");
 
         return pemEncodedString
