@@ -9,17 +9,19 @@
     "test": "bun test"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "grpc-tools": "^1.13.0",
     "grpc_tools_node_protoc_ts": "^5.3.3",
-    "typescript": "^5.9.3",
-    "@types/bun": "latest"
+    "typescript": "^5.9.3"
   },
   "module": "src/index.ts",
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@grpc/grpc-js": "^1.14.3",
+    "@peculiar/x509": "^2.0.0",
     "commander": "^14.0.3",
     "console-log-colors": "^0.5.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "reflect-metadata": "^0.2.2"
   }
 }
