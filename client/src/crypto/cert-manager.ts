@@ -28,9 +28,8 @@ class CertificateManager implements ICertificateManager {
      * 
      * - server-cas.pem
      * - identities/
-     *   - {alias}/
-     *     - cert.pem
-     *     - cert.key
+     *   - {alias}.pem
+     * - cert.key
      * Server CAs are stored in the `server-cas.pem` file, while client certificates and their corresponding private keys are stored in the `identities` directory, organized by alias.
      * 
      * @param alias the alias of the client being connected to
@@ -39,16 +38,17 @@ class CertificateManager implements ICertificateManager {
     async getClientIdentityCertificate(alias: string) {
         // declare the files
         const serverCAs = `${this.certificateDirectory}/server-cas.pem`;
-        const certPath = `${this.certificateDirectory}/identities/${alias}/cert.pem`;
-        const keyPath = `${this.certificateDirectory}/identities/${alias}/cert.key`;
+        const certPath = `${this.certificateDirectory}/identities/${alias}.pem`;
 
+        const { privateKey } = await this.getCryptoKeyPair();
+        const privateKeyPem = await crypto.subtle.exportKey("pkcs8", privateKey)
+        
         // read the files
         const certFile = await readFile(certPath);
-        const keyFile = await readFile(keyPath);
         const serverCAPool = await readFile(serverCAs);
 
         // create the TLS credentials
-        return credentials.createSsl(serverCAPool, keyFile, certFile);
+        return credentials.createSsl(serverCAPool, Buffer.from(privateKeyPem), certFile);
     }
 
     /**
