@@ -13,6 +13,7 @@ tasks:
     desc: Build the admin console React UI with Vite
     dir: ui
     cmds:
+      - bun install
       - bun run build
     silent: true
 
@@ -20,4 +21,5 @@ tasks:
     desc: Start admin console React UI development server
     dir: ui
     cmds:
+      - bun install
       - bun run dev
