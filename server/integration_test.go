@@ -13,6 +13,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"server/admin"
 	"server/auth"
 	"server/pb"
 	"time"
@@ -42,7 +43,7 @@ func getRequiredCertificates(t *testing.T, certificateService auth.ICertificateS
 	return serverCAPool, clientCAPool
 }
 
-func issueDeviceCreationRequest(t *testing.T, adminService *AdminService) string {
+func issueDeviceCreationRequest(t *testing.T, adminService *admin.AdminService) string {
 	// create a CSR for the device
 	token, err := adminService.CreateAddDeviceRequest()
 	if err != nil {
@@ -51,7 +52,7 @@ func issueDeviceCreationRequest(t *testing.T, adminService *AdminService) string
 	return token
 }
 
-func createDevice(t *testing.T, token string, adminService *AdminService) (string, tls.Certificate) {
+func createDevice(t *testing.T, token string, adminService *admin.AdminService) (string, tls.Certificate) {
 
 	// create a new self signed cert
 	// issue a certificate from the client CA
@@ -99,7 +100,7 @@ func createDevice(t *testing.T, token string, adminService *AdminService) (strin
 	return hostname, clientCert
 }
 
-func createGrpcClient(t *testing.T, certificateService auth.ICertificateService, token string, adminService *AdminService) *grpc.ClientConn {
+func createGrpcClient(t *testing.T, certificateService auth.ICertificateService, token string, adminService *admin.AdminService) *grpc.ClientConn {
 	// get the required certificates for the client
 	serverCAPool, clientCAPool := getRequiredCertificates(t, certificateService)
 

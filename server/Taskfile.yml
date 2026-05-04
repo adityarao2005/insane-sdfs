@@ -2,6 +2,11 @@
 
 version: '3'
 
+includes:
+  admin:
+    taskfile: ./admin/Taskfile.yml
+    dir: ./admin
+
 tasks:
   default:
     desc: Show available server tasks
@@ -28,6 +33,7 @@ tasks:
     cmds:
       - go build ./...
     deps:
+      - admin:ui:build
       - tidy
       - proto
 

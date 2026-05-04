@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  default:
+    desc: Show available admin console tasks
+    cmds:
+      - task --list
+    silent: true
+
+  ui:build:
+    desc: Build the admin console React UI with Vite
+    dir: ui
+    cmds:
+      - bun run build
+    silent: true
+
+  ui:dev:
+    desc: Start admin console React UI development server
+    dir: ui
+    cmds:
+      - bun run dev

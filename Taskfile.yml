@@ -22,3 +22,9 @@ tasks:
     cmds:
       - task server:test
       - task client:test
+      
+  build:
+    desc: Build all components
+    cmds:
+      - task server:build
+      - task client:build
