@@ -4,11 +4,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"server/admin"
 	"server/auth"
 	"server/filesystem_service"
 )
 
-func CreateServices(basePath string) (auth.ITokenService, auth.ICertificateService, *filesystem_service.FileSystemService, *filesystem_service.GrpcFileSystemServer, *AdminService) {
+func CreateServices(basePath string) (auth.ITokenService, auth.ICertificateService, *filesystem_service.FileSystemService, *filesystem_service.GrpcFileSystemServer, *admin.AdminService) {
 
 	// create the necessary directories for certificates and files
 	certDir := filepath.Join(basePath, "certs")
@@ -44,7 +45,7 @@ func CreateServices(basePath string) (auth.ITokenService, auth.ICertificateServi
 	}
 
 	// create the admin service
-	adminService, err := NewAdminService(tokenService, certificateService)
+	adminService, err := admin.NewAdminService(tokenService, certificateService)
 	if err != nil {
 		log.Fatalf("failed to initialize admin service: %v", err)
 	}

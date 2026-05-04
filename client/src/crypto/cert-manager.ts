@@ -28,8 +28,7 @@ class CertificateManager implements ICertificateManager {
      * 
      * - server-cas.pem
      * - identities/
-     *   - {alias}.pem
-     * - cert.key
+     *   - {alias}-cert.pem
      * Server CAs are stored in the `server-cas.pem` file, while client certificates and their corresponding private keys are stored in the `identities` directory, organized by alias.
      * 
      * @param alias the alias of the client being connected to
@@ -38,17 +37,21 @@ class CertificateManager implements ICertificateManager {
     async getClientIdentityCertificate(alias: string) {
         // declare the files
         const serverCAs = `${this.certificateDirectory}/server-cas.pem`;
-        const certPath = `${this.certificateDirectory}/identities/${alias}.pem`;
+        const certPath = `${this.certificateDirectory}/identities/${alias}-cert.pem`;
 
         const { privateKey } = await this.getCryptoKeyPair();
         const privateKeyPem = await crypto.subtle.exportKey("pkcs8", privateKey)
-        
-        // read the files
-        const certFile = await readFile(certPath);
-        const serverCAPool = await readFile(serverCAs);
 
-        // create the TLS credentials
-        return credentials.createSsl(serverCAPool, Buffer.from(privateKeyPem), certFile);
+        // read the files
+        try {
+            const certFile = await readFile(certPath);
+            const serverCAPool = await readFile(serverCAs);
+
+            // create the TLS credentials
+            return credentials.createSsl(serverCAPool, Buffer.from(privateKeyPem), certFile);
+        } catch (error: unknown) {
+            throw new Error(`Failed to read certificate files for alias ${alias}: ${(error as Error).message}`);
+        }
     }
 
     /**
@@ -132,7 +135,13 @@ class CertificateManager implements ICertificateManager {
             signingAlgorithm: algorithm
         }, crypto)
 
-        return certReq.toString("pem")
+        const pemEncodedString = certReq.toString("pem");
+
+        // export csr in PEM format to identities/{alias}-csr.pem
+        await mkdir(`${this.certificateDirectory}/identities`, { recursive: true });
+        await writeFile(`${this.certificateDirectory}/identities/${alias}-csr.pem`, pemEncodedString, "utf8");
+
+        return pemEncodedString
     }
 
 }
